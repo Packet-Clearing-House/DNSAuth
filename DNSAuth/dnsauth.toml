@@ -1,0 +1,13 @@
+customer-db = "postgres://user:password@127.0.0.1/postgres?sslmode=disable"
+influx-db = "http://127.0.0.1:8086/write?db=authdns"
+watch-dir = "/home/user/count"
+
+[bgp]
+    router-id = “116.121.4.10"
+    local-as = 53
+    peer-addr = “176.53.11.25"
+    peer-as = 12
+    connect-port = 179
+    listen-port = 179 # need sudo to run (privilege port)
+    remove-as-from-path = [12, 4234]
+

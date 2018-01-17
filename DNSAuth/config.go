@@ -1,0 +1,22 @@
+package main
+
+import (
+	"github.com/shafreeck/configo"
+	"stash.pch.net/rrdns/DNSAuth/DNSAuth/bgp"
+)
+
+type Config struct {
+	BGP *bgp.BGPConf
+	CustomerDB string `cfg:"customer-db; required; "`
+	InfluxDB string `cfg:"influx-db; required; "`
+	WatchDir string `cfg:"watch-dir; required; "`
+}
+
+func LoadConfig(path string) (*Config, error) {
+
+	conf := &Config{}
+	if err := configo.Load(path, &conf); err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
