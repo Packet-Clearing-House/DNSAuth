@@ -7,8 +7,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"encoding/binary"
 	"time"
-	. "stash.pch.net/rrdns/DNSAuth/libs/proto"
-	"stash.pch.net/rrdns/DNSAuth/libs/dnsdist"
+	. "github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/proto"
+	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/dnsdist"
 )
 
 

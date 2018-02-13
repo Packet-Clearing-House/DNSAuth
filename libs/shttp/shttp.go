@@ -5,7 +5,7 @@ import (
 	"log"
 	"unsafe"
 	"sync/atomic"
-	"stash.pch.net/rrdns/DNSAuth/libs/utils"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
 	"os"
 	"context"
 )

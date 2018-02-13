@@ -6,7 +6,7 @@ import (
 	"io"
 	"encoding/binary"
 	"log"
-	"stash.pch.net/rrdns/DNSAuth/libs/utils"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
 	"sync"
 )
 

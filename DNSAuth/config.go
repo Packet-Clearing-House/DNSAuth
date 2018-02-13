@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/shafreeck/configo"
-	"stash.pch.net/rrdns/DNSAuth/DNSAuth/bgp"
+	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/bgp"
 )
 
 type Config struct {

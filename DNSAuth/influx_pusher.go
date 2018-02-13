@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"stash.pch.net/rrdns/DNSAuth/libs/metrics"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"strings"
 	"bytes"
 	"io/ioutil"

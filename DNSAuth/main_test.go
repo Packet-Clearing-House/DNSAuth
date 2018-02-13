@@ -2,7 +2,7 @@ package main
 
 import (
 	"testing"
-	"stash.pch.net/rrdns/DNSAuth/libs/metrics"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"log"
 )
 
@@ -41,7 +41,7 @@ func TestCounters(t *testing.T) {
 	limiter := make(chan bool)
 	close(limiter)
 	metrics.DefaultRegistry.Register(dnsqueries)
-	# todo - this test file doesn't exist any more, need to create a dummy one with this name
+	// todo - this test file doesn't exist any more, need to create a dummy one with this name
 	aggreagate("mon-01.sample.net_2017-10-17.17-07.dmp.gz", limiter)
 
 	str := metrics.DefaultRegistry.Encode(&metrics.InfluxEncodeur{})

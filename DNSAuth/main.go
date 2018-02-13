@@ -10,11 +10,11 @@ import (
 	"compress/gzip"
 	"bytes"
 	"bufio"
-	"stash.pch.net/rrdns/DNSAuth/libs/metrics"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"strconv"
-	"stash.pch.net/rrdns/DNSAuth/libs/dnsdist"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/dnsdist"
 	"github.com/asergeyev/nradix"
-	"stash.pch.net/rrdns/DNSAuth/DNSAuth/bgp"
+	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/bgp"
 )
 
 const (
