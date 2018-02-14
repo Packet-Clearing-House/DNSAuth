@@ -5,6 +5,7 @@ import (
 	"time"
 	"flag"
 	"os"
+	"net"
 	"strings"
 	"path/filepath"
 	"compress/gzip"
@@ -31,11 +32,13 @@ const (
 
 const LAYOUT = "2006-01-02.15-04"
 
-var confpath = flag.String("c", ".", "Path for the config path (default is ./dnsauth.toml")
+var confpath = flag.String("c", "./dnsauth.toml", "Path for the config path (default is ./dnsauth.toml")
 
 
-var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "protocol", "prefix", "origin_as"}, 500)
+var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "protocol", "version", "prefix", "origin_as"}, 500)
 var tree *nradix.Tree
+
+var BGP_LOOKUPS = false
 
 func main() {
 	
@@ -44,7 +47,7 @@ func main() {
 	log.Println("Loading config file...")
 	config, err := LoadConfig(*confpath)
 	if err != nil {
-		log.Println("Error loading config file: ", err)
+		log.Fatalln("FAILED: ", err)
 	}
 	log.Println("OK!")
 	
@@ -55,24 +58,23 @@ func main() {
 	t, err := getCustomerTree()
 	tree = t
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("FAILED: ", err)
 	}
 	log.Println("OK!")
 
 
 	if config.BGP != nil {
+		BGP_LOOKUPS = true
 		log.Println("Starting BGP Resolver...")
 		err = bgp.Start(*config.BGP)
 		if err != nil {
-			log.Fatalln("Failed to start BGP Server: ", err)
+			log.Fatalln("FAILED: ", err)
 		}
+		log.Println("OK!")
+	} else {
+		log.Println("BGP lookups will be ignored, no BGP config provided.")
 	}
-	log.Println("OK!")
-	//http.Handle(
-	//	"/metrics",
-	//	metrics.HttpExport(&metrics.DefaultRegistry, &metrics.PrometheusEncodeur{}))
-	//
-	//go http.ListenAndServe(":8080", nil)
+	
 
 
 	metrics.DefaultRegistry.Register(dnsqueries)
@@ -215,9 +217,12 @@ func handleQuery(time time.Time, pop, line string) {
 	name := "Unknown"
 	prefix := ""
 	originAs := ""
+	version := "4"
 
 	// Resolving destination address to client
 	c, _ := tree.FindCIDR(fields[NS_IP])
+
+
 
 	// If we do find a result...
 	if c != nil {
@@ -225,7 +230,7 @@ func handleQuery(time time.Time, pop, line string) {
 		name = customer.Name
 
 		// ...resolving client ip through BGP
-		if customer.PrefixMonit || customer.ASNMonit {
+		if BGP_LOOKUPS && (customer.PrefixMonit || customer.ASNMonit) {
 			entry, err := bgp.Resolve(fields[CLIENT_IP])
 			if err == nil {
 				// I SHOULD DO SOMETHING HERE #DEBUG?
@@ -234,6 +239,13 @@ func handleQuery(time time.Time, pop, line string) {
 					prefix = entry.Prefix
 				}
 			}
+		}
+	}
+
+	if ipv := net.ParseIP(fields[CLIENT_IP]); ipv != nil {
+		log.Println(ipv)
+		if ipv.To4() == nil {
+			version = "6"
 		}
 	}
 
@@ -257,5 +269,5 @@ func handleQuery(time time.Time, pop, line string) {
 		rcodestr = "none"
 	}
 
-	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, protocol, originAs, prefix).Inc()
+	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, protocol, version, originAs, prefix).Inc()
 }

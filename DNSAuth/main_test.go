@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"github.com/asergeyev/nradix"
 	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"log"
 )
@@ -40,17 +41,17 @@ dnsaut_queries{direction="Q",pop=".wo",qtype="SOA",rcode="none"} 2 1508260020000
 func TestCounters(t *testing.T) {
 	limiter := make(chan bool)
 	close(limiter)
+
+	tree = nradix.NewTree(0)
+
 	metrics.DefaultRegistry.Register(dnsqueries)
 	// todo - this test file doesn't exist any more, need to create a dummy one with this name
-	aggreagate("mon-01.sample.net_2017-10-17.17-07.dmp.gz", limiter)
+	aggreagate("./tests/mon-01.xyz.foonet.net_2017-10-17.17-07.dmp.gz", limiter)
 
 	str := metrics.DefaultRegistry.Encode(&metrics.InfluxEncodeur{})
 
 	log.Println(str)
-	//log.Println(len(str))
-	//log.Println(res)
-	//log.Println(len(res))
-	push(&metrics.DefaultRegistry)
+	// push(&metrics.DefaultRegistry)
 
 	// #WORST CHECK EVER!
 	if len(str)!= len(res) {
