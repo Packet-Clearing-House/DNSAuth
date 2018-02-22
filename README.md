@@ -2,7 +2,7 @@
 
 ## About
 
-DNSAuth is a Golang application for ingesting DNS server statistics into an InfuxDB instance. The assumption is that you are running a DNS server and you get the raw statics from it either by having it log in the DNSAuth format or by pulling it off the wire via a packet capture (pcap) and then distill the pcap to the DNSAuth format.  It also assumes you want to have stats by customers which are resolved via a database.
+DNSAuth is a Golang application for ingesting DNS server statistics into an InfuxDB instance. The assumption is that you are running a DNS server and you get the raw statics from it either by having it log in the DNSAuth format or by pulling it off the wire via a packet capture (pcap) and then distill the pcap to the DNSAuth format.  It also assumes you want to have customer correlated to each entry in InfluxDB.
 
 ## Components
 
@@ -24,8 +24,8 @@ R 192.0.2.10 203.0.113.254 0 0 15 www.domain.com. 582 0
 Breaking this down, we can label the fields 1 through 9:
 
 ```
-R   192.0.2.10    203.0.113.254  0    0   15  www.domain.com.     582     0
-1   2               3           4    5   6   7                   8       9
+R   192.0.2.10    203.0.113.254 0    0   15  www.domain.com.     582     0
+1   2             3             4    5   6   7                   8       9
 ```
 
 And then the labels translate to: 
@@ -44,9 +44,9 @@ Note that that DNSAuth assumes all lines come in pairs of a Query and then Respo
 
 ## Resolving customer
 
-Given the server IP (field 3 from above), DNSAuth will query a postgres database.  It assumes the database has a CIDR formatted IP and will try to find the server IP in the that CIDR block.
+Given the server IP (field 3 from above), DNSAuth will query a postgres database to try try and find a matching customer.  It assumes that each customer row in the table has a CIDR formatted IP and will try to find the server IP in the that CIDR block.
 
-If no    customer is found, then "Unknown" is written to the database. See the "Installation" section below for further details about configuring customer rows.
+If no customer is found, then "Unknown" is written to the database. See the "Installation" section below for further details about configuring customer rows.
 
 ## InfluxDB Rows
 
