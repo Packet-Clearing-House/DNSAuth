@@ -12,7 +12,9 @@ This repo contains 3 different main directories:
   * GUI contains a simple GUI implementation to display information about customers
 
 
-## Log Format
+## Logs
+
+### File Format
 
 This is a sample log from a DNS server that DNSAuth reads:
 
@@ -24,8 +26,7 @@ R 192.0.2.10 203.0.113.254 0 0 15 www.domain.com. 582 0
 Breaking this down, we can label the fields 1 through 9:
 
 ```
-R   192.0.2.10    203.0.113.254 0    0   15  www.domain.com.     582     0
-1   2             3             4    5   6   7                   8       9
+R   192.0.2.10    203.0.113.254 0    0   15  www.domain.com.     582     0- 
 ```
 
 And then the labels translate to: 
@@ -41,6 +42,27 @@ And then the labels translate to:
 
 Note that that DNSAuth assumes all lines come in pairs of a Query and then Response line. The query line will always have a ``NULL`` for field 9. 
 
+
+### File Names
+
+DNSAuth assumes these facts about the file name:
+* A three letter pop is used to denote which location the DNS server is running
+* the three leter pop is part of the hostname who's format is ``subdomain.domain.tld``
+* A UTC based time stamp is included in the file name in ``YEAR-MONTH-DAY.HOUR-SECOND`` 
+* The file name is prefaced by ``SZC_`` followed by ``mon-01`` where ``01`` may be any zero padded number up to 10
+* the file's suffix will be ``.dmp.gz``
+
+An example of this for a pop in lga (New York) from Feb 25th, 2018 at 5:32am would be:
+
+```
+SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz
+```
+
+This file is included in the repository for example purposes.
+
+### Fie Format
+
+DNSAuth needs all log files to be gzipped and end in ``.gz``.
 
 ## Resolving customer
 
@@ -168,7 +190,7 @@ We're using the default `DNSAuth/DNSAuth/dnsauth.toml` config file. Likely this 
 Finally, in another terminal, copy a sample file in:
 
 ```
-cp DNSAuth/mon-01.sample.net_2017-10-17.17-07.dmp.gz /home/user/count/
+cp DNSAuth/test/SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz /home/user/count/
 ```
 
 If everything is working, then you should see this after you copy  the file:
@@ -187,6 +209,6 @@ INFO[0000] Add a peer configuration for:11.206.206.245     Topic=Peer
 2017/12/12 06:55:46 Influx pusher inserted 1 points!
 2017/12/12 06:55:46 Took 417.687µsseconds
 
-2017/12/12 06:56:16 Processed dump [mon-01-foo](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
+2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
 
 ```
