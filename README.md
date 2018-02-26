@@ -2,15 +2,77 @@
 
 ## About
 
+DNSAuth is a Golang application for ingesting DNS server statistics into an InfuxDB instance. The assumption is that you are running a DNS server and you get the raw statics from it either by having it log in the DNSAuth format or by pulling it off the wire via a packet capture (pcap) and then distill the pcap to the DNSAuth format.  It also assumes you want to have customer correlated to each entry in InfluxDB.
+
+## Components
+
 This repo contains 3 different main directories:
   * DNSAuth which is the main piece of software. It looks at a directory for new files coming in (through rsync atm) and then aggregate all the DNS queries to minute buckets that are then forwarded to influxdb.
   * API that allows to interact with the customer database
   * GUI contains a simple GUI implementation to display information about customers
 
 
+## Log Format
+
+This is a sample log from a DNS server that DNSAuth reads:
+
+```
+Q 192.0.2.10 203.0.113.254 0 0 15 www.domain.com. 44
+R 192.0.2.10 203.0.113.254 0 0 15 www.domain.com. 582 0
+```
+
+Breaking this down, we can label the fields 1 through 9:
+
+```
+R   192.0.2.10    203.0.113.254 0    0   15  www.domain.com.     582     0
+1   2             3             4    5   6   7                   8       9
+```
+
+And then the labels translate to: 
+1. Query or Response:  flag for query or response
+1. IP: source of host making the query
+1. Server: nameserver IP, used to determine customer
+1. Protocol; 0=UDP, 1=TCP
+1. Operation Code; 0=Query, 4=Notify, 5=Update, etc.
+1. Query Type; 1=A, 2=NS, 5=CNAME, 6=SOA, 12=PTR, etc
+1. Query string: zone being queried
+1. Size: packet size in bytes
+1. Response: If field 1 was an R; 0=NOERROR, 3=NXDOMAIN, 2=SERVFAIL, etc.
+
+Note that that DNSAuth assumes all lines come in pairs of a Query and then Response line. The query line will always have a ``NULL`` for field 9. 
+
+
+## Resolving customer
+
+Given the server IP (field 3 from above), DNSAuth will query a postgres database to try try and find a matching customer.  It assumes that each customer row in the table has a CIDR formatted IP and will try to find the server IP in the that CIDR block.
+
+If no customer is found, then "Unknown" is written to the database. See the "Installation" section below for further details about configuring customer rows.
+
+## InfluxDB Rows
+
+DNSAuth writes stats in 1 minute buckets with the following fields:
+
+* pop - point of presence
+* time - in 1 minute buckets
+* direction - query or response
+* qtypestr - query type (eg A, NS etc.)
+* rcodestr - response coe (eg NXDOMAIN, SERVFAIL etc.) 
+* name - resolved via IP from local postgres DB
+* originAs - optional, the AS the client's IP is from
+* prefix -  optional, the prefix the client's IP is from
+* protocol - UDP or TCP
+* version - IPv4 or IPv6 
+
+## Installation and Running
+
+
+### Root vs local user
+
+All installation should be done by a user with sudo. As well, you can run the entire app with root or sudo.
+
 ### Prerequisites
 
-You need to install the following:
+You need to install the following before DNSAuth will work:
 
 * [Influxdb](https://www.docs.influxdata.com/influxdb/v0.9/introduction/installation/)
 * [Grafana](http://docs.grafana.org/installation/)
@@ -18,15 +80,7 @@ You need to install the following:
 * [postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-
-As well, you'll need a read directory created and set two entries in `/etc/profile`:
-
-```bash
-sudo mkdir -p /home/jtodd/count
-sudo chmod -R 777 /home/jtodd
-```
-
-For Ubuntu, installing all the packages looks like this (run **as root**):
+For Ubuntu, installing all the packages looks like this:
 
 ```
 apt-get update
@@ -50,7 +104,7 @@ apt-get install golang-go
 
 #### Set up Go and run go get
 
-**As your user**,  create go directories and, while connected to VPN, run `git go`.  Enter your bitbucket/stash username when prompted:
+Create go directories and run `git go`.  Enter your bitbucket/stash username when prompted:
 
 ``` 
 echo export GOPATH=$HOME/go | sudo tee -a /etc/profile
@@ -63,7 +117,7 @@ Todo - ``go get`` to github isn't tested.  Need to test and update docs if neede
 
 #### Postgres user and data
 
-Launch postgres CLI via `sudo -u postgres psql postgres` and then run:
+Launch postgres CLI via `sudo -u postgres psql postgres` and then run this code:
 
 ```
 DROP TABLE ns_customers;
@@ -73,13 +127,15 @@ CREATE TABLE ns_customers(
    asn BOOL,
    prefix BOOL
 );
-INSERT INTO ns_customers VALUES ('1.199.71.00/24', 'Foo', true, true);
-INSERT INTO ns_customers VALUES ('caec:cec6:c4ef:bb7b::/48', 'Bar', true, true);
-INSERT INTO ns_customers VALUES ('11.206.206.0/24', 'Bash', true, true);
+INSERT INTO ns_customers VALUES ('203.0.113.254/24', 'Foo', true, true);
+INSERT INTO ns_customers VALUES ('2001:DB8::/32', 'Bar', true, true);
+INSERT INTO ns_customers VALUES ('198.51.100.3/24', 'Bash', true, true);
 
 CREATE USER "user" WITH PASSWORD 'password';
 grant select on ns_customers to "user";
 ```
+
+This will generate 3 dummy customers "Foo", "Bar" and "Bash". Create rows with your real customers when deploying to production.
 
 #### Set up influxdb
 
@@ -88,23 +144,31 @@ After running `influx`, create the database:
 ```bash
 CREATE DATABASE authdns
 ```
-#### clone and run
 
-clone the repo  `cd;git clone git@github.com:Packet-Clearing-House/DNSAuth.git`
+#### create dirs, clone and run
+
+You'll need a log file directory created:
+
+```bash
+sudo mkdir -p /home/user/count
+sudo chmod -R 777 /home/user
+```
+
+Then clone the repo  `cd;git clone git@github.com:Packet-Clearing-House/DNSAuth.git`
 
 and then try running dnsauth. We need to run as `sudo` so that it can bind to a privileged port:
 
 ```
 cd
-sudo ./go/bin/DNSAuth -c dnsauth/DNSAuth/dnsauth.toml
+sudo ./go/bin/DNSAuth -c DNSAuth/DNSAuth/dnsauth.toml
 ```
 
-We're using the default `dnsauth/DNSAuth/dnsauth.toml` config file. Likely this shouldn't  need to change.
+We're using the default `DNSAuth/DNSAuth/dnsauth.toml` config file. Likely this shouldn't  need to change.
 
 Finally, in another terminal, copy a sample file in:
 
 ```
-cp dnsauth/mon-01.sample.net_2017-10-17.17-07.dmp.gz /home/jtodd/count/
+cp DNSAuth/mon-01.sample.net_2017-10-17.17-07.dmp.gz /home/user/count/
 ```
 
 If everything is working, then you should see this after you copy  the file:
