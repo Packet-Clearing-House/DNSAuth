@@ -126,7 +126,7 @@ apt-get install golang-go
 
 #### Set up Go and run go get
 
-Create go directories and run `git go`.  Enter your bitbucket/stash username when prompted:
+Create go directories and run `git go`:
 
 ``` 
 echo export GOPATH=$HOME/go | sudo tee -a /etc/profile
@@ -134,8 +134,6 @@ echo PATH=$PATH:$GOPATH/bin | sudo tee -a /etc/profile
 mkdir -p $HOME/go/{bin,pkg,src}
 env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 ```
-
-Todo - ``go get`` to github isn't tested.  Need to test and update docs if needed.
 
 #### Postgres user and data
 
@@ -157,7 +155,7 @@ CREATE USER "user" WITH PASSWORD 'password';
 grant select on ns_customers to "user";
 ```
 
-This will generate 3 dummy customers "Foo", "Bar" and "Bash". Create rows with your real customers when deploying to production.
+This will generate 3 dummy customers "Foo", "Bar" and "Bash". Create rows with your real customers when deploying to production.sh
 
 #### Set up influxdb
 
