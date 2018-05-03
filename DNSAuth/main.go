@@ -14,7 +14,6 @@ import (
 	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"strconv"
 	"github.com/Packet-Clearing-House/DNSAuth/libs/dnsdist"
-	"github.com/asergeyev/nradix"
 	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/bgp"
 )
 
@@ -36,7 +35,7 @@ var confpath = flag.String("c", "./dnsauth.toml", "Path for the config path (def
 
 
 var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "protocol", "version", "prefix", "origin_as"}, 500)
-var tree *nradix.Tree
+var customerDB *CustomerDB
 
 var BGP_LOOKUPS = false
 
@@ -54,9 +53,9 @@ func main() {
 	DB_URL = config.CustomerDB
 	INFLUX_URL = config.InfluxDB
 
-	log.Println("Getting customer list from postgres...")
-	t, err := getCustomerTree()
-	tree = t
+	log.Println("Getting customer list from mysql...")
+	customerDB, err = InitCustomerDB(DB_URL)
+	
 	if err != nil {
 		log.Fatalln("FAILED: ", err)
 	}
@@ -98,13 +97,11 @@ func main() {
 	visit := func (path string, f os.FileInfo, err error) error {
 		if strings.HasSuffix(path, ".dmp.gz") {
 
-			if _, found := files[path]; found {
-				newFiles[path] = true
-			} else {
-				newFiles[path] = true
+			if _, found := files[path]; !found {
 				go aggreagate(path, limiter)
 				limiter <-true
 			}
+			newFiles[path] = true
 		}
 		return nil
 	}
@@ -214,36 +211,16 @@ func handleQuery(time time.Time, pop, line string) {
 
 	fields := strings.Fields(line)
 
-	name := "Unknown"
 	prefix := ""
 	originAs := ""
 	version := "4"
 
 	// Resolving destination address to client
-	c, _ := tree.FindCIDR(fields[NS_IP])
+	qname := fields[QNAME][:len(fields[QNAME])-1]
+	name := customerDB.Resolve(qname)
 
-
-
-	// If we do find a result...
-	if c != nil {
-		customer := c.(*Customer)
-		name = customer.Name
-
-		// ...resolving client ip through BGP
-		if BGP_LOOKUPS && (customer.PrefixMonit || customer.ASNMonit) {
-			entry, err := bgp.Resolve(fields[CLIENT_IP])
-			if err == nil {
-				// I SHOULD DO SOMETHING HERE #DEBUG?
-				originAs = strconv.Itoa(int(entry.Path[len(entry.Path) - 1]))
-				if customer.PrefixMonit {
-					prefix = entry.Prefix
-				}
-			}
-		}
-	}
 
 	if ipv := net.ParseIP(fields[CLIENT_IP]); ipv != nil {
-		log.Println(ipv)
 		if ipv.To4() == nil {
 			version = "6"
 		}

@@ -135,27 +135,23 @@ mkdir -p $HOME/go/{bin,pkg,src}
 env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 ```
 
-#### Postgres user and data
+#### Mysql and local testing
 
-Launch postgres CLI via `sudo -u postgres psql postgres` and then run this code:
+Here are the instruction in order to run a local instance of Mysql for local testing.
 
 ```
-DROP TABLE ns_customers;
-CREATE TABLE ns_customers(
-   ip TEXT PRIMARY KEY NOT NULL,
-   name TEXT,
-   asn BOOL,
-   prefix BOOL
-);
-INSERT INTO ns_customers VALUES ('203.0.113.254/24', 'Foo', true, true);
-INSERT INTO ns_customers VALUES ('2001:DB8::/32', 'Bar', true, true);
-INSERT INTO ns_customers VALUES ('198.51.100.3/24', 'Bash', true, true);
+docker pull mysql
+docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pass -d mysql --default-authentication-plugin=mysql_native_password
 
-CREATE USER "user" WITH PASSWORD 'password';
-grant select on ns_customers to "user";
+mysql --host=127.0.0.1 -uroot -ppass
+
+mysql> CREATE DATABASE customers;
+mysql> USE customers;
+mysql> source customers.sql;
+mysql> SELECT * FROM zones;
 ```
 
-This will generate 3 dummy customers "Foo", "Bar" and "Bash". Create rows with your real customers when deploying to production.sh
+This will generate 2 dummy customers "foo", "bar".
 
 #### Set up influxdb
 

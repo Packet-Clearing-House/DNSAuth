@@ -1,6 +1,6 @@
-customer-db = "postgres://user:password@127.0.0.1/postgres?sslmode=disable"
+customer-db = "root:pass@(127.0.0.1)/customerdb"
 influx-db = "http://127.0.0.1:8086/write?db=authdns"
-watch-dir = "/home/user/count"
+watch-dir = "./"
 
 #[bgp]
 #    router-id = “116.121.4.10"
