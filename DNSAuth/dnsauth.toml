@@ -1,4 +1,5 @@
-customer-db = "root:pass@(127.0.0.1)/customerdb"
+customer-db = "root:pass@(127.0.0.1)/customers"
+#customer-refresh = 10
 influx-db = "http://127.0.0.1:8086/write?db=authdns"
 watch-dir = "./"
 

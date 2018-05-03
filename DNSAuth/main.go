@@ -39,6 +39,11 @@ var customerDB *CustomerDB
 
 var BGP_LOOKUPS = false
 
+
+func customerRefresh() {
+
+}
+
 func main() {
 	
 	flag.Parse()
@@ -53,8 +58,21 @@ func main() {
 	DB_URL = config.CustomerDB
 	INFLUX_URL = config.InfluxDB
 
-	log.Println("Getting customer list from mysql...")
-	customerDB, err = InitCustomerDB(DB_URL)
+	log.Println("Initializing customer DB (will be refresh every " + strconv.Itoa(config.CustomerRefresh) + " hours)...")
+	customerDB := NewCustomerDB(DB_URL)
+	go func () {
+		refresh := func () {
+			log.Println("Refreshing customer list from mysql...")
+			if err := customerDB.Refresh(); err != nil {
+				log.Println("ERROR: Could not refresh customer list (", err, ")!")
+			}
+			log.Println("OK!")
+		}
+		refresh()
+		for _ = range time.Tick(time.Duration(config.CustomerRefresh) * time.Second) {
+			refresh()
+		}
+	}()
 	
 	if err != nil {
 		log.Fatalln("FAILED: ", err)

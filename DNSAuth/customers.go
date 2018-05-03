@@ -2,13 +2,13 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"sync"
 	_ "github.com/go-sql-driver/mysql"
 	radix "github.com/armon/go-radix"
 	_"github.com/lib/pq"
 )
 
-var DB_URL = "root:pass@(127.0.0.1)/customerdb"
+var DB_URL = "root:pass@(127.0.0.1)/customers"
 
 // Function that reverse a word (test.com -> moc.tset)
 func reverse(s string) string {
@@ -20,46 +20,59 @@ func reverse(s string) string {
 }
 
 type CustomerDB struct {
+	*sync.Mutex
+	dburl string
 	tree *radix.Tree
 }
 
 // Resolve the customer name from DNS qname 
 // Returns Unknown if not found
 func (c *CustomerDB) Resolve(qname string) string {
+	
 	name := "Unknown"
+	c.Lock()
 	_, value, found := c.tree.LongestPrefix(reverse(qname))
+	c.Unlock()
 	if found {
 		name = value.(string)
 	}
 	return name
 }
 
-// Init the customer DB. Connects to mysql to fetch all data and build a radix tree
-func InitCustomerDB(path string) (*CustomerDB, error) {
-	db := &CustomerDB{
-		radix.New(),
-	}
-
+func (c *CustomerDB) Refresh() error {
+	
+	tree := radix.New()
 	mysql, err := sql.Open("mysql", DB_URL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	rows, err := mysql.Query("SELECT group_name, zone FROM zones;")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
-
 
 	for rows.Next() {
 		var name, zone string
 		err := rows.Scan(&name, &zone)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		db.tree.Insert(reverse(zone), name)
+		tree.Insert(reverse(zone), name)
 	}
-	
-	return db, nil
+
+	c.Lock()
+	c.tree = tree
+	c.Unlock()
+	return nil
+}
+
+// Init the customer DB. Connects to mysql to fetch all data and build a radix tree
+func NewCustomerDB(path string) (*CustomerDB) {
+	return &CustomerDB{
+		new(sync.Mutex),
+		path,
+		radix.New(),
+	}
 }
