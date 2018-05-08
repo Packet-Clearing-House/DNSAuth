@@ -66,7 +66,7 @@ DNSAuth needs all log files to be gzipped and end in ``.gz``.
 
 ## Resolving customer
 
-Given the server IP (field 3 from above), DNSAuth will query a postgres database to try try and find a matching customer.  It assumes that each customer row in the table has a CIDR formatted IP and will try to find the server IP in the that CIDR block.
+Given the qname of a DNS query, the resolution happens through zone names that are retreive from a mysql database. Each customer will be assocated with one or more zone names which then will be used in a radix tree in order to get the longest prefix match from the qname.
 
 If no customer is found, then "Unknown" is written to the database. See the "Installation" section below for further details about configuring customer rows.
 
@@ -79,7 +79,7 @@ DNSAuth writes stats in 1 minute buckets with the following fields:
 * direction - query or response
 * qtypestr - query type (eg A, NS etc.)
 * rcodestr - response coe (eg NXDOMAIN, SERVFAIL etc.) 
-* name - resolved via IP from local postgres DB
+* name - resolved via zone name from local postgres DB
 * originAs - optional, the AS the client's IP is from
 * prefix -  optional, the prefix the client's IP is from
 * protocol - UDP or TCP
@@ -99,7 +99,6 @@ You need to install the following before DNSAuth will work:
 * [Influxdb](https://www.docs.influxdata.com/influxdb/v0.9/introduction/installation/)
 * [Grafana](http://docs.grafana.org/installation/)
 * [go-lang](https://golang.org/doc/install), ideally >=1.9
-* [postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 For Ubuntu, installing all the packages looks like this:
@@ -112,7 +111,6 @@ source /etc/lsb-release
 echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/influxdb.list
 apt-get update && sudo apt-get install influxdb
 service influxdb start
-apt-get install postgresql postgresql-contrib
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_4.6.2_amd64.deb
 apt-get install -y adduser libfontconfig
 dpkg -i grafana_4.6.2_amd64.deb
@@ -135,7 +133,22 @@ mkdir -p $HOME/go/{bin,pkg,src}
 env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 ```
 
-#### Mysql and local testing
+#### Set up influxdb
+
+After running `influx`, create the database:
+
+```bash
+CREATE DATABASE authdns
+```
+
+#### Clone and run
+
+Clone the repo  `git clone https://github.com/Packet-Clearing-House/DNSAuth.git; cd DNSAuth`
+
+
+##### Mysql and local testing
+
+For local testing purposes (no remote Mysql server available), you will need a local instance of the Mysql server and the customer database.
 
 Here are the instruction in order to run a local instance of Mysql for local testing.
 
@@ -153,55 +166,38 @@ mysql> SELECT * FROM zones;
 
 This will generate 2 dummy customers "foo", "bar".
 
-#### Set up influxdb
 
-After running `influx`, create the database:
 
-```bash
-CREATE DATABASE authdns
-```
-
-#### create dirs, clone and run
-
-You'll need a log file directory created:
-
-```bash
-sudo mkdir -p /home/user/count
-sudo chmod -R 777 /home/user
-```
-
-Then clone the repo  `cd;git clone git@github.com:Packet-Clearing-House/DNSAuth.git`
-
-and then try running dnsauth. We need to run as `sudo` so that it can bind to a privileged port:
+Now try running dnsauth. We need to run as `sudo` so that it can bind to a privileged port:
 
 ```
-cd
-sudo ./go/bin/DNSAuth -c DNSAuth/DNSAuth/dnsauth.toml
+sudo DNSAuth -c DNSAuth/dnsauth.toml
 ```
 
-We're using the default `DNSAuth/DNSAuth/dnsauth.toml` config file. Likely this shouldn't  need to change.
+We're using the default `DNSAuth/dnsauth.toml` config file. Likely this shouldn't need to change.
 
 Finally, in another terminal, copy a sample file in:
 
 ```
-cp DNSAuth/test/SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz /home/user/count/
+cp DNSAuth/test/SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz  ./
 ```
 
-If everything is working, then you should see this after you copy  the file:
+If everything is working, then you should see this after you copy the file:
 
 ```bash
  sudo ./go/bin/DNSAuth -c dnsauth/DNSAuth/dnsauth.toml 
-2017/12/12 06:55:46 Loading config file...
-2017/12/12 06:55:46 OK!
-2017/12/12 06:55:46 Getting customer list from postgres...
-2017/12/12 06:55:46 OK!
-2017/12/12 06:55:46 Starting BGP Resolver...
-INFO[0000] Starting BGP server: (router-id :1.199.71.1, local-as: 1234, peer-address: 1.199.71.1, remote-as: 5678) 
-INFO[0000] Add a peer configuration for:11.206.206.245     Topic=Peer
-2017/12/12 06:55:46 OK!
-2017/12/12 06:55:46 Pushing metrics!!
-2017/12/12 06:55:46 Influx pusher inserted 1 points!
-2017/12/12 06:55:46 Took 417.687µsseconds
+
+2018/05/08 14:26:06 Loading config file...
+2018/05/08 14:26:06 OK!
+2018/05/08 14:26:06 Initializing customer DB (will be refresh every 24 hours)...
+2018/05/08 14:26:06 OK!
+2018/05/08 14:26:06 BGP lookups will be ignored, no BGP config provided.
+2018/05/08 14:26:06 Refreshing customer list from mysql...
+2018/05/08 14:26:06 Pushing metrics!!
+2018/05/08 14:26:06 OK!
+
+2018/05/08 14:26:06 Influx pusher inserted 1 points!
+2018/05/08 14:26:06 Took 470.31µsseconds
 
 2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
 
