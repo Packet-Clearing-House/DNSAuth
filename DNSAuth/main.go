@@ -39,11 +39,6 @@ var customerDB *CustomerDB
 
 var BGP_LOOKUPS = false
 
-
-func customerRefresh() {
-
-}
-
 func main() {
 	
 	flag.Parse()
