@@ -79,7 +79,7 @@ DNSAuth writes stats in 1 minute buckets with the following fields:
 * direction - query or response
 * qtypestr - query type (eg A, NS etc.)
 * rcodestr - response coe (eg NXDOMAIN, SERVFAIL etc.) 
-* name - resolved via zone name from local postgres DB
+* name - resolved via zone name from local mysql DB
 * originAs - optional, the AS the client's IP is from
 * prefix -  optional, the prefix the client's IP is from
 * protocol - UDP or TCP
