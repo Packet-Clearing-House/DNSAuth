@@ -79,11 +79,32 @@ DNSAuth writes stats in 1 minute buckets with the following fields:
 * direction - query or response
 * qtypestr - query type (eg A, NS etc.)
 * rcodestr - response coe (eg NXDOMAIN, SERVFAIL etc.) 
-* name - resolved via zone name from local mysql DB
+* name - resolved via zone name from local postgres DB
 * originAs - optional, the AS the client's IP is from
 * prefix -  optional, the prefix the client's IP is from
 * protocol - UDP or TCP
 * version - IPv4 or IPv6 
+
+
+## Config file
+
+DNSAuth needs a config file to run. It contains multiple fields:
+
+```
+# URL for the Mysql instance to retreive customers
+customer-db = "root:pass@(127.0.0.1)/customers"
+
+# Refreshing interval (hours) of the customer database.
+customer-refresh = 10
+
+# The URL of the influx DB instance.
+influx-db = "http://127.0.0.1:8086/write?db=authdns"
+
+# The directory DNSAuth should watch for new log files coming in.
+watch-dir = "./"
+
+```
+
 
 ## Installation and Running
 
@@ -132,6 +153,18 @@ echo PATH=$PATH:$GOPATH/bin | sudo tee -a /etc/profile
 mkdir -p $HOME/go/{bin,pkg,src}
 env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 ```
+
+##### Building from a branch
+
+The `go get` command will build DNSAuth binary from the master branch. 
+If you need to build from a branch instead: then you'll need to clone the repo within the correct path: `$GOPATH/src/github.com/Packet-Clearing-House`.
+
+Then checkout the branch you need and run the following command:
+
+```
+cd DNSAuth; go install
+```
+
 
 #### Set up influxdb
 
