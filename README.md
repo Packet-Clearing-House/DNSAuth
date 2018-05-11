@@ -121,50 +121,44 @@ You need to install the following before DNSAuth will work:
 * [Grafana](http://docs.grafana.org/installation/)
 * [go-lang](https://golang.org/doc/install), ideally >=1.9
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+* [MySQL](https://dev.mysql.com/downloads/)
 
 For Ubuntu, installing all the packages looks like this:
 
 ```
 apt-get update
-apt-get upgrade
+apt-get upgrade -y
 curl -sL https://repos.influxdata.com/influxdb.key | sudo apt-key add -
 source /etc/lsb-release
 echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/influxdb.list
-apt-get update && sudo apt-get install influxdb
+apt-get update && sudo apt-get install -y influxdb mariadb-server
 service influxdb start
+service mysql start
+mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'pass' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_4.6.2_amd64.deb
 apt-get install -y adduser libfontconfig
 dpkg -i grafana_4.6.2_amd64.deb
 service grafana-server start
 update-rc.d grafana-server defaults
-add-apt-repository ppa:longsleep/golang-backports
+add-apt-repository -y ppa:longsleep/golang-backports
 apt-get update
-apt-get install golang-go 
+apt-get install -y golang-go
 ```
+
+Note - In a production environment you'll want to not set the root password to "pass" ;)
 
 
 #### Set up Go and run go get
 
-Create go directories and run `git go`:
+Create go directories and run `go get`:
 
 ``` 
 echo export GOPATH=$HOME/go | sudo tee -a /etc/profile
 echo PATH=$PATH:$GOPATH/bin | sudo tee -a /etc/profile
 mkdir -p $HOME/go/{bin,pkg,src}
 env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
+source /etc/profile
 ```
-
-##### Building from a branch
-
-The `go get` command will build DNSAuth binary from the master branch. 
-If you need to build from a branch instead: then you'll need to clone the repo within the correct path: `$GOPATH/src/github.com/Packet-Clearing-House`.
-
-Then checkout the branch you need and run the following command:
-
-```
-cd DNSAuth; go install
-```
-
 
 #### Set up influxdb
 
@@ -174,37 +168,36 @@ After running `influx`, create the database:
 CREATE DATABASE authdns
 ```
 
-#### Clone and run
+#### Clone 
 
-Clone the repo  `git clone https://github.com/Packet-Clearing-House/DNSAuth.git; cd DNSAuth`
-
-
-##### Mysql and local testing
-
-For local testing purposes (no remote Mysql server available), you will need a local instance of the Mysql server and the customer database.
-
-Here are the instruction in order to run a local instance of Mysql for local testing.
+Clone the repo with:
 
 ```
-docker pull mysql
-docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pass -d mysql --default-authentication-plugin=mysql_native_password
+cd
+git clone https://github.com/Packet-Clearing-House/DNSAuth.git
+```
 
-mysql --host=127.0.0.1 -uroot -ppass
+#### Mysql
 
-mysql> CREATE DATABASE customers;
-mysql> USE customers;
-mysql> source customers.sql;
-mysql> SELECT * FROM zones;
+Assuming you're running MySQL locally the root password of `pass`, here's how you would 
+load our default database and test customers:
+
+```
+cd
+mysql -u root -p -h 127.0.0.1 < DNSAuth/customers.sql
 ```
 
 This will generate 2 dummy customers "foo", "bar".
 
+#### Run 
 
 
 Now try running dnsauth. We need to run as `sudo` so that it can bind to a privileged port:
 
 ```
-sudo DNSAuth -c DNSAuth/dnsauth.toml
+cd
+sudo ./go/bin/DNSAuth -c DNSAuth/DNSAuth/dnsauth.toml 
+
 ```
 
 We're using the default `DNSAuth/dnsauth.toml` config file. Likely this shouldn't need to change.
@@ -212,14 +205,13 @@ We're using the default `DNSAuth/dnsauth.toml` config file. Likely this shouldn'
 Finally, in another terminal, copy a sample file in:
 
 ```
+cd
 cp DNSAuth/test/SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz  ./
 ```
 
 If everything is working, then you should see this after you copy the file:
 
 ```bash
- sudo ./go/bin/DNSAuth -c dnsauth/DNSAuth/dnsauth.toml 
-
 2018/05/08 14:26:06 Loading config file...
 2018/05/08 14:26:06 OK!
 2018/05/08 14:26:06 Initializing customer DB (will be refresh every 24 hours)...
@@ -235,3 +227,21 @@ If everything is working, then you should see this after you copy the file:
 2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
 
 ```
+
+#### Building from a branch
+
+The `go get` command above will build DNSAuth binary from the master branch. 
+If you need to build from a branch instead: then you'll need to clone the repo 
+within the correct path: `$GOPATH/src/github.com/Packet-Clearing-House/DNSAuth`.
+
+Then checkout the branch you need and run `go install`.  So if you wanted to checkout a branch called
+`test-branch`, you'd run this:
+
+```
+cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth
+git checkout test-branch
+go install
+```
+
+
+
