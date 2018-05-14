@@ -251,6 +251,7 @@ Then checkout the branch you need and run `go install`.  So if you wanted to che
 ```
 cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth
 git checkout test-branch
-cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/DNSAuth
+cd DNSAuth
+go build
 go install
 ```
