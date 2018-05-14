@@ -150,14 +150,19 @@ Note - In a production environment you'll want to not set the root password to "
 
 #### Set up Go and run go get
 
-Create go directories and run `go get`:
+Create go directories and environment: 
 
 ``` 
 echo export GOPATH=$HOME/go | sudo tee -a /etc/profile
 echo PATH=$PATH:$GOPATH/bin | sudo tee -a /etc/profile
 mkdir -p $HOME/go/{bin,pkg,src}
-env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 source /etc/profile
+```
+
+then run `go get`:
+
+```
+env GIT_TERMINAL_PROMPT=1 go get -u github.com/Packet-Clearing-House/DNSAuth/...
 ```
 
 #### Set up influxdb
@@ -179,15 +184,21 @@ git clone https://github.com/Packet-Clearing-House/DNSAuth.git
 
 #### Mysql
 
-Assuming you're running MySQL locally the root password of `pass`, here's how you would 
+Assuming you're running MySQL locally with the root password of `pass`, here's how you would 
 load our default database and test customers:
 
 ```
 cd
-mysql -u root -p -h 127.0.0.1 < DNSAuth/customers.sql
+mysql -u root -p -h localhost < DNSAuth/customers.sql
 ```
 
-This will generate 2 dummy customers "foo", "bar".
+This will generate 2 dummy customers "foo", "bar". Now be sure that go has access to the 
+driver by installing it:
+
+```
+cd
+go get -u github.com/go-sql-driver/mysql
+```
 
 #### Run 
 
@@ -240,8 +251,6 @@ Then checkout the branch you need and run `go install`.  So if you wanted to che
 ```
 cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth
 git checkout test-branch
+cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/DNSAuth
 go install
 ```
-
-
-
