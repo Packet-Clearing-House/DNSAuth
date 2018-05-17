@@ -184,9 +184,7 @@ load our default database and test customers:
 mysql -u root -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
 ```
 
-This will generate 2 dummy customers "foo", "bar". Now be sure that go has access to the 
-driver by installing it:
-
+This will generate 2 dummy customers "foo", "bar".
 
 #### Run 
 
