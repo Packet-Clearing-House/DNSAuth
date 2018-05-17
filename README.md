@@ -88,7 +88,7 @@ DNSAuth writes stats in 1 minute buckets with the following fields:
 
 ## Config file
 
-DNSAuth needs a config file to run. It contains multiple fields:
+DNSAuth needs a config `dnsauth.toml` file to run:
 
 ```
 # URL for the Mysql instance to retreive customers
@@ -104,6 +104,8 @@ influx-db = "http://127.0.0.1:8086/write?db=authdns"
 watch-dir = "./"
 
 ```
+
+DNSAuth ships with this file as displayed above.  During the set up steps below, you'll copy it to have a local copy which you can customize if needed.
 
 
 ## Installation and Running
@@ -134,7 +136,7 @@ echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stabl
 apt-get update && sudo apt-get install -y influxdb mariadb-server
 service influxdb start
 service mysql start
-mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'pass' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'pass' WITH GRANT OPTION;GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'pass' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_4.6.2_amd64.deb
 apt-get install -y adduser libfontconfig
 dpkg -i grafana_4.6.2_amd64.deb
@@ -145,7 +147,7 @@ apt-get update
 apt-get install -y golang-go
 ```
 
-Note - In a production environment you'll want to not set the root password to "pass" ;)
+Note - In a production environment you'll want to not set the root password to `pass` ;)
 
 
 #### Set up Go and run go get
@@ -173,23 +175,13 @@ After running `influx`, create the database:
 CREATE DATABASE authdns
 ```
 
-#### Clone 
-
-Clone the repo with:
-
-```
-cd
-git clone https://github.com/Packet-Clearing-House/DNSAuth.git
-```
-
 #### Mysql
 
 Assuming you're running MySQL locally with the root password of `pass`, here's how you would 
 load our default database and test customers:
 
 ```
-cd
-mysql -u root -p -h localhost < DNSAuth/customers.sql
+mysql -u root -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
 ```
 
 This will generate 2 dummy customers "foo", "bar". Now be sure that go has access to the 
@@ -203,17 +195,18 @@ Now try running dnsauth. We need to run as `sudo` so that it can bind to a privi
 
 ```
 cd
-sudo ./go/bin/DNSAuth -c DNSAuth/DNSAuth/dnsauth.toml 
+cp $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/DNSAuth/dnsauth.toml .
+sudo ./go/bin/DNSAuth -c ./dnsauth.toml 
 
 ```
 
-We're using the default `DNSAuth/dnsauth.toml` config file. Likely this shouldn't need to change.
+We're using the default `dnsauth.toml` config file. Likely this shouldn't need to change.
 
 Finally, in another terminal, copy a sample file in:
 
 ```
 cd
-cp DNSAuth/test/SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz  ./
+cp $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/DNSAuth/tests/mon-01.xyz.foonet.net_2017-10-17.17-07.dmp.gz .
 ```
 
 If everything is working, then you should see this after you copy the file:
