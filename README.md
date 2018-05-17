@@ -195,10 +195,6 @@ mysql -u root -p -h localhost < DNSAuth/customers.sql
 This will generate 2 dummy customers "foo", "bar". Now be sure that go has access to the 
 driver by installing it:
 
-```
-cd
-go get -u github.com/go-sql-driver/mysql
-```
 
 #### Run 
 
@@ -226,15 +222,9 @@ If everything is working, then you should see this after you copy the file:
 2018/05/08 14:26:06 Loading config file...
 2018/05/08 14:26:06 OK!
 2018/05/08 14:26:06 Initializing customer DB (will be refresh every 24 hours)...
-2018/05/08 14:26:06 OK!
 2018/05/08 14:26:06 BGP lookups will be ignored, no BGP config provided.
-2018/05/08 14:26:06 Refreshing customer list from mysql...
-2018/05/08 14:26:06 Pushing metrics!!
-2018/05/08 14:26:06 OK!
-
-2018/05/08 14:26:06 Influx pusher inserted 1 points!
-2018/05/08 14:26:06 Took 470.31µsseconds
-
+2018/05/08 14:26:06 [CustomerDB] Refreshing list from mysql...
+2018/05/08 14:26:06 [Influx] Inserted 1 points in 560.884µsseconds
 2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
 
 ```
@@ -252,6 +242,6 @@ Then checkout the branch you need and run `go install`.  So if you wanted to che
 cd $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth
 git checkout test-branch
 cd DNSAuth
-go build
+go get ./...
 go install
 ```
