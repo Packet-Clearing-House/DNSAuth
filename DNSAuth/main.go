@@ -39,6 +39,7 @@ var customerDB *CustomerDB
 
 var BGP_LOOKUPS = false
 
+
 func main() {
 	
 	flag.Parse()
@@ -53,28 +54,27 @@ func main() {
 	DB_URL = config.CustomerDB
 	INFLUX_URL = config.InfluxDB
 
+	
+	// Starting the customerDB fetching process
 	log.Println("Initializing customer DB (will be refresh every " + strconv.Itoa(config.CustomerRefresh) + " hours)...")
-	customerDB := NewCustomerDB(DB_URL)
+	customerDB = NewCustomerDB(DB_URL)
 	go func () {
+		// Refresh function
 		refresh := func () {
-			log.Println("Refreshing customer list from mysql...")
+			log.Println("[CustomerDB] Refreshing list from mysql...")
 			if err := customerDB.Refresh(); err != nil {
-				log.Println("ERROR: Could not refresh customer list (", err, ")!")
+				log.Println("[CustomerDB] ERROR: Could not refresh customer list (", err, ")!")
 			}
-			log.Println("OK!")
 		}
+
 		refresh()
-		for _ = range time.Tick(time.Duration(config.CustomerRefresh) * time.Second) {
+		for _ = range time.Tick(time.Duration(config.CustomerRefresh) * time.Hour) {
 			refresh()
 		}
 	}()
-	
-	if err != nil {
-		log.Fatalln("FAILED: ", err)
-	}
-	log.Println("OK!")
 
 
+	// Checking for BGP conf and initaliazing BGP connection if needed
 	if config.BGP != nil {
 		BGP_LOOKUPS = true
 		log.Println("Starting BGP Resolver...")
@@ -86,17 +86,12 @@ func main() {
 	} else {
 		log.Println("BGP lookups will be ignored, no BGP config provided.")
 	}
-	
 
-
+	// Running the metric pushing process
 	metrics.DefaultRegistry.Register(dnsqueries)
 	go func() {
 		for {
-			log.Println("Pushing metrics!!")
-			starttime := time.Now()
 			push(&metrics.DefaultRegistry)
-			proctime := time.Since(starttime)
-			log.Println("Took " + proctime.String() + "seconds")
 			time.Sleep(time.Minute)
 		}
 	}()

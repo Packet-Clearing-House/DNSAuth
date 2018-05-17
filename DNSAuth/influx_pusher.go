@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
 	"log"
 	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"strings"
@@ -13,6 +14,9 @@ import (
 var INFLUX_URL = "http://127.0.0.1:8086/write?db=authdns"
 
 func push(registry *metrics.Registry) {
+
+	starttime := time.Now()
+
 	str := registry.Encode(&metrics.InfluxEncodeur{})
 	splits := strings.Split(str, "\n")
 
@@ -34,12 +38,15 @@ func push(registry *metrics.Registry) {
 		}
 	}
 	resp, err := http.Post(INFLUX_URL, "application/octet-stream", buffer)
+	proctime := time.Since(starttime)
+
 	if err != nil {
-		log.Println(err)
+		log.Println("[Influx] ERROR: ", err)
 	} else if resp.StatusCode != 204 {
 		buf, _ := ioutil.ReadAll(resp.Body)
 		log.Println(string(buf))
 		resp.Body.Close()
+		log.Println("[Influx] Inserted " + strconv.Itoa(cpt) + " points in " + proctime.String())
 	}
-	log.Println("Influx pusher inserted " + strconv.Itoa(cpt) + " points!")
+	
 }
