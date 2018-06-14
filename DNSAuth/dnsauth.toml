@@ -1,13 +1,11 @@
-customer-db = "postgres://user:password@127.0.0.1/postgres?sslmode=disable"
+# URL for the MySQL instance to retreive customers
+customer-db = "root:pass@(127.0.0.1)/customers"
+
+# Refreshing interval (hours) of the customer database.
+customer-refresh = 10
+
+# The URL of the influx DB instance.
 influx-db = "http://127.0.0.1:8086/write?db=authdns"
-watch-dir = "/home/user/count"
 
-#[bgp]
-#    router-id = “116.121.4.10"
-#    local-as = 53
-#    peer-addr = “176.53.11.25"
-#    peer-as = 12
-#    connect-port = 179
-#    listen-port = 179 # need sudo to run (privilege port)
-#    remove-as-from-path = [12, 4234]
-
+# The directory DNSAuth should watch for new log files coming in.
+watch-dir = "./"

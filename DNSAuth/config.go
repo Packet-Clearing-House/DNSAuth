@@ -8,6 +8,7 @@ import (
 type Config struct {
 	BGP *bgp.BGPConf
 	CustomerDB string `cfg:"customer-db; required; "`
+	CustomerRefresh int `cfg:"customer-refresh; 24; "`
 	InfluxDB string `cfg:"influx-db; required; "`
 	WatchDir string `cfg:"watch-dir; required; "`
 }
