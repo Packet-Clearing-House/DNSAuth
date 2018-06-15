@@ -162,7 +162,11 @@ func aggreagate(filepath string, limiter chan bool) {
 	index = strings.LastIndex(filepath,"net_") + len("net_")
 	timestamp := filepath[index:index+16]
 
-	date, _ := time.Parse(LAYOUT, timestamp)
+	date, err := time.Parse(LAYOUT, timestamp)
+	if err != nil {
+		log.Println(filepath, ": ", err)
+		return
+	}
 
 	buffer := bytes.NewBuffer(nil)
 	cpt := 0
