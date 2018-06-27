@@ -34,7 +34,7 @@ const LAYOUT = "2006-01-02.15-04"
 var confpath = flag.String("c", "./dnsauth.toml", "Path for the config path (default is ./dnsauth.toml")
 
 
-var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "protocol", "version", "prefix", "origin_as"}, 500)
+var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "zone",  "protocol", "version", "prefix", "origin_as"}, 500)
 var customerDB *CustomerDB
 
 var BGP_LOOKUPS = false
@@ -229,7 +229,7 @@ func handleQuery(time time.Time, pop, line string) {
 
 	// Resolving destination address to client
 	qname := fields[QNAME][:len(fields[QNAME])-1]
-	name := customerDB.Resolve(qname)
+	zone, name := customerDB.Resolve(qname)
 
 
 	if ipv := net.ParseIP(fields[CLIENT_IP]); ipv != nil {
@@ -258,5 +258,5 @@ func handleQuery(time time.Time, pop, line string) {
 		rcodestr = "none"
 	}
 
-	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, protocol, version, originAs, prefix).Inc()
+	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, zone, protocol, version, originAs, prefix).Inc()
 }

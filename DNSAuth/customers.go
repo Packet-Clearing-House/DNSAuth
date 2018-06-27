@@ -27,16 +27,17 @@ type CustomerDB struct {
 
 // Resolve the customer name from DNS qname 
 // Returns Unknown if not found
-func (c *CustomerDB) Resolve(qname string) string {
+func (c *CustomerDB) Resolve(qname string) (string, string) {
 	
 	name := "Unknown"
+	zone := "Unknown"
 	c.Lock()
-	_, value, found := c.tree.LongestPrefix(reverse(qname))
+	zone, value, found := c.tree.LongestPrefix(reverse(qname))
 	c.Unlock()
 	if found {
 		name = value.(string)
 	}
-	return name
+	return reverse(zone), name
 }
 
 func (c *CustomerDB) Refresh() error {
@@ -62,6 +63,7 @@ func (c *CustomerDB) Refresh() error {
 		tree.Insert(reverse(zone), name)
 	}
 
+
 	c.Lock()
 	c.tree = tree
 	c.Unlock()
@@ -70,6 +72,7 @@ func (c *CustomerDB) Refresh() error {
 
 // Init the customer DB. Connects to mysql to fetch all data and build a radix tree
 func NewCustomerDB(path string) (*CustomerDB) {
+
 	return &CustomerDB{
 		new(sync.Mutex),
 		path,
