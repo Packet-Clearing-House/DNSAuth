@@ -136,7 +136,8 @@ echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stabl
 apt-get update && sudo apt-get install -y influxdb mariadb-server
 service influxdb start
 service mysql start
-mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'pass' WITH GRANT OPTION;GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'pass' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+mysql -u root -e "CREATE DATABASE customers"
+mysql -u root -e "GRANT ALL PRIVILEGES ON customers.* TO 'dnsauth'@'localhost' IDENTIFIED BY 'pass'; GRANT ALL PRIVILEGES ON customers.* TO 'dnsauth'@'127.0.0.1' IDENTIFIED BY 'pass'; FLUSH PRIVILEGES;"
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_4.6.2_amd64.deb
 apt-get install -y adduser libfontconfig
 dpkg -i grafana_4.6.2_amd64.deb

@@ -1,5 +1,5 @@
 # URL for the MySQL instance to retreive customers
-customer-db = "root:pass@(127.0.0.1)/customers"
+customer-db = "dnsauth:pass@(127.0.0.1)/customers"
 
 # Refreshing interval (hours) of the customer database.
 customer-refresh = 10
