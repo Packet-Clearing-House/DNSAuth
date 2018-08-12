@@ -1,8 +1,8 @@
 package shttp
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 	"sync/atomic"
 	"unsafe"
 )
@@ -27,7 +27,7 @@ func (m *AuthMux) ChangeCreds(login, pass string) {
 }
 
 func (m *AuthMux) Handle(pattern string, handler http.Handler) {
-	m.ServeMux.Handle(pattern,  m.HTTPBasicAuth(handler))
+	m.ServeMux.Handle(pattern, m.HTTPBasicAuth(handler))
 }
 
 func (m *AuthMux) HTTPBasicAuth(handler http.Handler) http.HandlerFunc {
@@ -42,5 +42,3 @@ func (m *AuthMux) HTTPBasicAuth(handler http.Handler) http.HandlerFunc {
 		handler.ServeHTTP(w, r)
 	}
 }
-
-

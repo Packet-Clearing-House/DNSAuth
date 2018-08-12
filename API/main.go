@@ -1,12 +1,13 @@
 package main
 
 import (
-	"net/http"
 	"database/sql"
+	"encoding/json"
 	"log"
+	"net/http"
+
 	"github.com/elgs/gosqljson"
 	_ "github.com/lib/pq"
-	"encoding/json"
 	"github.com/rs/cors"
 )
 
@@ -42,7 +43,6 @@ func addCustomer() http.HandlerFunc {
 		ip := r.URL.Query().Get("ip")
 		prefix := r.URL.Query().Get("prefix")
 		asn := r.URL.Query().Get("asn")
-
 
 		db, err := sql.Open("postgres", "postgres://user@127.0.0.1/pipeline?sslmode=disable")
 		if err != nil {
@@ -104,7 +104,6 @@ func updateCustomer() http.HandlerFunc {
 		}
 	}
 }
-
 
 func main() {
 
