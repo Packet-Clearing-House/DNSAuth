@@ -1,18 +1,17 @@
 package utils
 
 import (
-	"net"
 	"errors"
-	"net/http"
 	"log"
+	"net"
+	"net/http"
 	"strconv"
 )
 
 type ACL struct {
 	cidrs []*net.IPNet
-	ips []*net.IP
+	ips   []*net.IP
 }
-
 
 func (acl ACL) Check(ip net.IP) bool {
 	for _, ipnet := range acl.cidrs {
@@ -28,7 +27,7 @@ func (acl ACL) Check(ip net.IP) bool {
 	return false
 }
 
-type ACLError struct{
+type ACLError struct {
 	Addr string
 }
 
@@ -36,10 +35,10 @@ func (e ACLError) Error() string {
 	return "IP (" + e.Addr + ") not allowed, rejecting connection!"
 }
 
-func (e ACLError)  Timeout() bool {
+func (e ACLError) Timeout() bool {
 	return false
 }
-func (e ACLError)  Temporary() bool{
+func (e ACLError) Temporary() bool {
 	return true
 }
 
@@ -83,8 +82,6 @@ func ACLListen(nett, laddr string, acl ACL) (*ACListener, error) {
 	return nil, err
 }
 
-
-
 func ParseACLFromStrings(aclStr []string) (acl ACL, err error) {
 
 	//acl = make([]*net.IPNet, len(aclStr))
@@ -105,8 +102,6 @@ func ParseACLFromStrings(aclStr []string) (acl ACL, err error) {
 	return acl, nil
 }
 
-
-
 func HTTPBasicAuth(handler http.Handler, login, pass string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +118,8 @@ func HTTPBasicAuth(handler http.Handler, login, pass string) http.HandlerFunc {
 }
 
 const (
-	minTCPPort         = 0
-	maxTCPPort         = 65535
+	minTCPPort = 0
+	maxTCPPort = 65535
 )
 
 // Will split host and port from a string in the format host:port
@@ -141,7 +136,7 @@ func SplitHostPort(hostPort string) (addr string, port int, err error) {
 	}
 	if net.ParseIP(addr) == nil {
 		return "", 0, errors.New(addr + " is not a correct IP address")
-	} else if port, err := strconv.Atoi(portStr) ; err != nil || port < minTCPPort || port > maxTCPPort {
+	} else if port, err := strconv.Atoi(portStr); err != nil || port < minTCPPort || port > maxTCPPort {
 		return "", 0, errors.New(portStr + " is not a correct port number")
 	} else {
 		return addr, port, nil

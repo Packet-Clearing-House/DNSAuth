@@ -1,12 +1,12 @@
 package main
 
 import (
-	"testing"
-	"github.com/asergeyev/nradix"
-	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 	"log"
-)
+	"testing"
 
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
+	"github.com/asergeyev/nradix"
+)
 
 var res = `dnsaut_queries{direction="Q",pop=".wo",qtype="DNSKEY",rcode="none"} 1 1508260020000
 dnsaut_queries{direction="R",pop=".wo",qtype="A",rcode="noerror"} 154 1508260020000
@@ -37,7 +37,6 @@ dnsaut_queries{direction="R",pop=".wo",qtype="DS",rcode="noerror"} 17 1508260020
 dnsaut_queries{direction="Q",pop=".wo",qtype="SOA",rcode="none"} 2 1508260020000
 `
 
-
 func TestCounters(t *testing.T) {
 	limiter := make(chan bool)
 	close(limiter)
@@ -54,7 +53,7 @@ func TestCounters(t *testing.T) {
 	// push(&metrics.DefaultRegistry)
 
 	// #WORST CHECK EVER!
-	if len(str)!= len(res) {
+	if len(str) != len(res) {
 		t.Fatal("Not getting the right result!")
 	}
 }

@@ -1,16 +1,17 @@
 package metrics
 
 import (
-	"os"
-	"github.com/orcaman/concurrent-map"
 	"bytes"
 	"net/http"
+	"os"
+
+	"github.com/orcaman/concurrent-map"
 )
 
 var DefaultRegistry Registry = Registry{os.Args[0], cmap.New()}
 
 type Registry struct {
-	prefix string
+	prefix  string
 	metrics cmap.ConcurrentMap
 }
 
@@ -21,7 +22,7 @@ func NewRegistry(prefix string) *Registry {
 	}
 }
 
-func (r *Registry) Register(m... Metric) {
+func (r *Registry) Register(m ...Metric) {
 	for _, metric := range m {
 		if !r.metrics.SetIfAbsent(metric.Name(), metric) {
 			panic("Cannot register metric: " + metric.Name() + "... Already exists!")
@@ -39,9 +40,7 @@ func (r *Registry) Encode(me MetricEncoder) string {
 	return buf.String()
 }
 
-
-
-func Register(m... Metric) {
+func Register(m ...Metric) {
 	for _, metric := range m {
 		if !DefaultRegistry.metrics.SetIfAbsent(metric.Name(), metric) {
 			panic("Cannot register metric: " + metric.Name() + "... Already exists!")

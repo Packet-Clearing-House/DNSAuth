@@ -1,20 +1,22 @@
 package shttp
 
 import (
-	"net/http"
-	"log"
-	"unsafe"
-	"sync/atomic"
-	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
-	"os"
 	"context"
+	"log"
+	"net/http"
+	"os"
+	"sync/atomic"
+	"unsafe"
+
+	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
 )
 
 type HttpServerConfig struct {
-	Addr string	`cfg:"addr; required; netaddr"`
-	Acl []string`cfg:"acl; [\"127.0.0.1\", \"::1\"]"`
-	Password string `cfg:"password; """`
+	Addr     string   `cfg:"addr; required; netaddr"`
+	Acl      []string `cfg:"acl; [\"127.0.0.1\", \"::1\"]"`
+	Password string   `cfg:"password; """`
 }
+
 var server *http.Server
 var mux *AuthMux = NewAuthMux("", "")
 
@@ -28,7 +30,7 @@ func Start(config HttpServerConfig) error {
 	} else {
 		mux.ChangeCreds("", config.Password)
 		newServer := http.Server{
-			Handler: mux,
+			Handler:  mux,
 			ErrorLog: log.New(os.Stdout, "", log.LstdFlags),
 		}
 		atomic.SwapPointer((*unsafe.Pointer)((unsafe.Pointer)(&server)), unsafe.Pointer(&newServer))
@@ -46,7 +48,6 @@ func Reload(config HttpServerConfig) {
 	Stop()
 	Start(config)
 }
-
 
 func Stop() {
 	if err := server.Shutdown(context.Background()); err != nil {

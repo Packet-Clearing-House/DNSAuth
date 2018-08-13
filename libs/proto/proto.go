@@ -1,24 +1,24 @@
 package proto
 
 import (
-	"net"
-	"time"
-	"io"
 	"encoding/binary"
+	"io"
 	"log"
-	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
+	"net"
 	"sync"
+	"time"
+
+	"github.com/Packet-Clearing-House/DNSAuth/libs/utils"
 )
 
 type Connector interface {
 	Serve(func(conn *ProtoConn)) error
 }
 
-
 type Dialer struct {
 	//TagsAdd string
 	//TagsPass string
-	Tag string
+	Tag  string
 	Addr string
 	stop chan bool
 }
@@ -69,14 +69,13 @@ func (d *Dialer) Serve(onNewConn func(pc *ProtoConn)) error {
 	return nil
 }
 
-
 type Listener struct {
-	Tag string
-	Addr string
-	ACL []string
-	stop chan bool
+	Tag       string
+	Addr      string
+	ACL       []string
+	stop      chan bool
 	stopGroup sync.WaitGroup
-	ln *utils.ACListener
+	ln        *utils.ACListener
 }
 
 func (l *Listener) Stop() error {
@@ -142,7 +141,6 @@ func (l *Listener) Serve(onNewConn func(pc *ProtoConn)) error {
 		}
 	}()
 
-
 	//ip := net.ParseIP(l.Addr)
 	//if ip == nil {
 	//	return errors.New("Wrong ip address")
@@ -162,15 +160,10 @@ func (l *Listener) Serve(onNewConn func(pc *ProtoConn)) error {
 	return nil
 }
 
-
-
-
-
 //type ConnHandler func(conn onNewConn, ) onNewConn
 
 type onNewConn func(conn ProtoConn)
 type onNewMsg func(msg []byte)
-
 
 type ProtoConn struct {
 	OriginPort string
@@ -182,7 +175,6 @@ func NewProtoConn(conn net.Conn, originPort string) *ProtoConn {
 	return &ProtoConn{originPort, conn, make(chan bool)}
 }
 
-
 func (p ProtoConn) Close() {
 	p.Conn.Close()
 	close(p.closed)
@@ -191,7 +183,6 @@ func (p ProtoConn) Close() {
 func (p ProtoConn) Wait() {
 	<-p.closed
 }
-
 
 func (p ProtoConn) ReadMsg() ([]byte, error) {
 	datalen := make([]byte, 2)
@@ -206,8 +197,6 @@ func (p ProtoConn) ReadMsg() ([]byte, error) {
 
 	// Translating those 2 bytes and reading the message
 	len := binary.BigEndian.Uint16(datalen)
-
-
 
 	data := make([]byte, len)
 	log.Println("Waiting for ", len)
@@ -263,5 +252,3 @@ func (p ProtoConn) WriteMsg(msg []byte) error {
 //		}
 //	}
 //}
-
-

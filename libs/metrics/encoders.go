@@ -1,13 +1,12 @@
 package metrics
 
 import (
-	"strings"
-	"strconv"
 	"bytes"
+	"strconv"
+	"strings"
 )
 
-type PrometheusEncodeur struct {}
-
+type PrometheusEncodeur struct{}
 
 func (pe *PrometheusEncodeur) EncodeSimpleMetric(sm *SimpleMetric) string {
 	date := ""
@@ -57,13 +56,9 @@ func (pe *PrometheusEncodeur) EncodeFuncMetric(tm *FuncMetric) string {
 	return tm.Name() + " " + strconv.FormatUint(tm.Value(), 10) + "\n"
 }
 
+type InfluxEncodeur struct{}
 
-
-
-type InfluxEncodeur struct {}
-
-
-func (pe *InfluxEncodeur ) EncodeSimpleMetric(sm *SimpleMetric) string {
+func (pe *InfluxEncodeur) EncodeSimpleMetric(sm *SimpleMetric) string {
 	date := ""
 	if sm.time != nil {
 		date = strconv.FormatInt(sm.time.Unix(), 10)
@@ -71,7 +66,7 @@ func (pe *InfluxEncodeur ) EncodeSimpleMetric(sm *SimpleMetric) string {
 	return sm.Name() + ", value=" + strconv.FormatUint(sm.Value(), 10) + " " + date + "\n"
 }
 
-func (pe *InfluxEncodeur ) EncodeTaggedMetrics(tm *TaggedMetrics) string {
+func (pe *InfluxEncodeur) EncodeTaggedMetrics(tm *TaggedMetrics) string {
 
 	buf := bytes.NewBuffer(nil)
 
