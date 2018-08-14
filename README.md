@@ -92,7 +92,7 @@ DNSAuth needs a config `dnsauth.toml` file to run:
 
 ```
 # URL for the Mysql instance to retreive customers
-customer-db = "root:pass@(127.0.0.1)/customers"
+customer-db = "dnsauth:pass@(127.0.0.1)/customers"
 
 # Refreshing interval (hours) of the customer database.
 customer-refresh = 10
@@ -136,7 +136,8 @@ echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stabl
 apt-get update && sudo apt-get install -y influxdb mariadb-server
 service influxdb start
 service mysql start
-mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'pass' WITH GRANT OPTION;GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY 'pass' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+mysql -u root -e "CREATE DATABASE customers"
+mysql -u root -e "GRANT ALL PRIVILEGES ON customers.* TO 'dnsauth'@'localhost' IDENTIFIED BY 'pass'; GRANT ALL PRIVILEGES ON customers.* TO 'dnsauth'@'127.0.0.1' IDENTIFIED BY 'pass'; FLUSH PRIVILEGES;"
 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_4.6.2_amd64.deb
 apt-get install -y adduser libfontconfig
 dpkg -i grafana_4.6.2_amd64.deb
@@ -147,7 +148,7 @@ apt-get update
 apt-get install -y golang-go
 ```
 
-Note - In a production environment you'll want to not set the root password to `pass` ;)
+Note - In a production environment you'll want to not set the database user password to `pass` ;)
 
 
 #### Set up Go and run go get
@@ -177,11 +178,11 @@ CREATE DATABASE authdns
 
 #### Mysql
 
-Assuming you're running MySQL locally with the root password of `pass`, here's how you would 
+Using the previously created `dnsauth` user with the password of `pass`, here's how you would 
 load our default database and test customers:
 
 ```
-mysql -u root -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
+mysql -u dnsauth -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
 ```
 
 This will generate 2 dummy customers "foo", "bar".
@@ -213,7 +214,6 @@ If everything is working, then you should see this after you copy the file:
 2018/05/08 14:26:06 Loading config file...
 2018/05/08 14:26:06 OK!
 2018/05/08 14:26:06 Initializing customer DB (will be refresh every 24 hours)...
-2018/05/08 14:26:06 BGP lookups will be ignored, no BGP config provided.
 2018/05/08 14:26:06 [CustomerDB] Refreshing list from mysql...
 2018/05/08 14:26:06 [Influx] Inserted 1 points in 560.884µsseconds
 2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
