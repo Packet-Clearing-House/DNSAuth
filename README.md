@@ -92,7 +92,7 @@ DNSAuth needs a config `dnsauth.toml` file to run:
 
 ```
 # URL for the Mysql instance to retreive customers
-customer-db = "root:pass@(127.0.0.1)/customers"
+customer-db = "dnsauth:pass@(127.0.0.1)/customers"
 
 # Refreshing interval (hours) of the customer database.
 customer-refresh = 10
@@ -148,7 +148,7 @@ apt-get update
 apt-get install -y golang-go
 ```
 
-Note - In a production environment you'll want to not set the root password to `pass` ;)
+Note - In a production environment you'll want to not set the database user password to `pass` ;)
 
 
 #### Set up Go and run go get
@@ -178,11 +178,11 @@ CREATE DATABASE authdns
 
 #### Mysql
 
-Assuming you're running MySQL locally with the root password of `pass`, here's how you would 
+Using the previously created `dnsauth` user with the password of `pass`, here's how you would 
 load our default database and test customers:
 
 ```
-mysql -u root -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
+mysql -u dnsauth -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
 ```
 
 This will generate 2 dummy customers "foo", "bar".
