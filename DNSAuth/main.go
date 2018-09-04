@@ -244,7 +244,6 @@ func handleQuery(time time.Time, pop, line string) {
 
 func cleanupFile(filePath string, config *Config) error {
 	var err error
-	log.Printf("Cleaning up file %s. Action: %s", filePath, config.CleanupAction)
 	switch config.CleanupAction {
 	case "move":
 		err = cleanupFileMove(filePath, config.CleanupDir)
@@ -263,5 +262,6 @@ func cleanupFileMove(filePath string, destDir string) error {
 }
 
 func cleanupFileDelete(filePath string) error {
+	log.Printf("Removing file %s\n", filePath)
 	return os.Remove(filePath)
 }
