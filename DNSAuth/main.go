@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -85,7 +86,7 @@ func main() {
 		if strings.HasSuffix(path, ".dmp.gz") {
 
 			if _, found := files[path]; !found {
-				go aggreagate(path, limiter)
+				go aggreagate(path, limiter, config)
 				limiter <- true
 			}
 			newFiles[path] = true
@@ -114,7 +115,7 @@ func main() {
 	}
 }
 
-func aggreagate(filepath string, limiter chan bool) {
+func aggreagate(filepath string, limiter chan bool, config *Config) {
 
 	starttime := time.Now()
 
@@ -190,6 +191,10 @@ func aggreagate(filepath string, limiter chan bool) {
 		handleQuery(date.Truncate(time.Minute), pop, line)
 
 	}
+	err = cleanupFile(filepath, config)
+	if err != nil {
+		log.Printf("Failed to clean up %s. Reason: %s", filepath, err)
+	}
 	proctime := time.Since(starttime)
 	log.Printf("Processed dump [mon-%s-%s](%s - %s): %d lines in (%s) seconds!\n",
 		mon, pop, initialdate, date, cpt, proctime)
@@ -235,4 +240,28 @@ func handleQuery(time time.Time, pop, line string) {
 	}
 
 	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, zone, protocol, version, originAs, prefix).Inc()
+}
+
+func cleanupFile(filePath string, config *Config) error {
+	var err error
+	log.Printf("Cleaning up file %s. Action: %s", filePath, config.CleanupAction)
+	switch config.CleanupAction {
+	case "move":
+		err = cleanupFileMove(filePath, config.CleanupDir)
+	case "delete":
+		err = cleanupFileDelete(filePath)
+	case "none":
+	default:
+		err = fmt.Errorf("Invalid config setting for cleanup action: %s", config.CleanupAction)
+	}
+	return err
+}
+
+func cleanupFileMove(filePath string, destDir string) error {
+	log.Printf("Moving file %s to %s\n", filePath, destDir)
+	return os.Rename(filePath, destDir+"/"+filepath.Base(filePath))
+}
+
+func cleanupFileDelete(filePath string) error {
+	return os.Remove(filePath)
 }
