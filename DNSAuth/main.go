@@ -115,13 +115,13 @@ func main() {
 	}
 }
 
-func aggregate(filepath string, limiter chan bool, config *Config) {
+func aggregate(filePath string, limiter chan bool, config *Config) {
 
 	starttime := time.Now()
 
 	defer func() { <-limiter }()
 
-	fileHandle, err := os.Open(filepath)
+	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println(err)
 		return
@@ -130,21 +130,21 @@ func aggregate(filepath string, limiter chan bool, config *Config) {
 
 	reader, err := gzip.NewReader(fileHandle)
 	if err != nil {
-		log.Println(filepath, ": ", err)
+		log.Println(filePath, ": ", err)
 		return
 	}
 	defer reader.Close()
 
-	index := strings.LastIndex(filepath, "mon-") + len("mon-")
-	mon := filepath[index : index+2]
-	pop := filepath[index+3 : index+6]
+	index := strings.LastIndex(filePath, "mon-") + len("mon-")
+	mon := filePath[index : index+2]
+	pop := filePath[index+3 : index+6]
 
-	index = strings.LastIndex(filepath, "net_") + len("net_")
-	timestamp := filepath[index : index+16]
+	index = strings.LastIndex(filePath, "net_") + len("net_")
+	timestamp := filePath[index : index+16]
 
 	date, err := time.Parse(LAYOUT, timestamp)
 	if err != nil {
-		log.Println(filepath, ": ", err)
+		log.Println(filePath, ": ", err)
 		return
 	}
 
@@ -161,7 +161,7 @@ func aggregate(filepath string, limiter chan bool, config *Config) {
 
 		fields := strings.Fields(line)
 		if len(fields) != 9 {
-			log.Println("Issue unformatting line:", line, " for dump ", filepath)
+			log.Println("Issue unformatting line:", line, " for dump ", filePath)
 			continue
 		}
 		buffer.WriteString(line)
@@ -191,9 +191,9 @@ func aggregate(filepath string, limiter chan bool, config *Config) {
 		handleQuery(date.Truncate(time.Minute), pop, line)
 
 	}
-	err = cleanupFile(filepath, config)
+	err = cleanupFile(filePath, config)
 	if err != nil {
-		log.Printf("Failed to clean up %s. Reason: %s", filepath, err)
+		log.Printf("Failed to clean up %s. Reason: %s", filePath, err)
 	}
 	proctime := time.Since(starttime)
 	log.Printf("Processed dump [mon-%s-%s](%s - %s): %d lines in (%s) seconds!\n",
