@@ -86,7 +86,7 @@ func main() {
 		if strings.HasSuffix(path, ".dmp.gz") {
 
 			if _, found := files[path]; !found {
-				go aggreagate(path, limiter, config)
+				go aggregate(path, limiter, config)
 				limiter <- true
 			}
 			newFiles[path] = true
@@ -115,7 +115,7 @@ func main() {
 	}
 }
 
-func aggreagate(filepath string, limiter chan bool, config *Config) {
+func aggregate(filepath string, limiter chan bool, config *Config) {
 
 	starttime := time.Now()
 
