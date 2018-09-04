@@ -41,7 +41,7 @@ func main() {
 
 	flag.Parse()
 
-	log.Println("Loading config file...")
+	log.Printf("Loading config file %s...\n", *confpath)
 	config, err := LoadConfig(*confpath)
 	if err != nil {
 		log.Fatalln("FAILED: ", err)
