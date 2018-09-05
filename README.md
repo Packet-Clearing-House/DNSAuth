@@ -103,6 +103,12 @@ influx-db = "http://127.0.0.1:8086/write?db=authdns"
 # The directory DNSAuth should watch for new log files coming in.
 watch-dir = "./"
 
+# Action to take after processing a file; one of none, move, or delete.
+cleanup-action = "none"
+
+# Path to move processed files when cleanup-action = "move".
+# Must not be a sub-directory of watch-dir; no trailing slash.
+cleanup-dir = "/tmp"
 ```
 
 DNSAuth ships with this file as displayed above.  During the set up steps below, you'll copy it to have a local copy which you can customize if needed.
