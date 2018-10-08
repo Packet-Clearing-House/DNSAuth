@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"net"
 	"sync"
 
 	radix "github.com/armon/go-radix"
@@ -10,6 +12,12 @@ import (
 )
 
 var DB_URL = "root:pass@(127.0.0.1)/customers"
+
+type customer struct {
+	Name    string
+	IPStart []byte
+	IPEnd   []byte
+}
 
 // Function that reverse a word (test.com -> moc.tset)
 func reverse(s string) string {
@@ -28,7 +36,7 @@ type CustomerDB struct {
 
 // Resolve the customer name from DNS qname
 // Returns Unknown if not found
-func (c *CustomerDB) Resolve(qname string) (string, string) {
+func (c *CustomerDB) Resolve(qname string, ip net.IP) (string, string) {
 
 	name := "Unknown"
 	zone := "Unknown"
@@ -36,7 +44,11 @@ func (c *CustomerDB) Resolve(qname string) (string, string) {
 	zone, value, found := c.tree.LongestPrefix(reverse(qname))
 	c.Unlock()
 	if found {
-		name = value.(string)
+		cust := value.(customer)
+		if bytes.Compare(ip, cust.IPStart) >= 0 && bytes.Compare(ip, cust.IPEnd) <= 0 {
+			name = cust.Name
+		}
+		name = cust.Name
 	}
 	return reverse(zone), name
 }
@@ -49,7 +61,7 @@ func (c *CustomerDB) Refresh() error {
 		return err
 	}
 
-	rows, err := mysql.Query("SELECT group_name, zone FROM zones;")
+	rows, err := mysql.Query("SELECT name, ip_start, ip_end, zone FROM zones;")
 	if err != nil {
 		return err
 	}
@@ -57,11 +69,17 @@ func (c *CustomerDB) Refresh() error {
 
 	for rows.Next() {
 		var name, zone string
-		err := rows.Scan(&name, &zone)
+		var ipStart, ipEnd []byte
+		err := rows.Scan(&name, &ipStart, &ipEnd, &zone)
 		if err != nil {
 			return err
 		}
-		tree.Insert(reverse(zone), name)
+		cust := customer{
+			Name:    name,
+			IPStart: ipStart,
+			IPEnd:   ipEnd,
+		}
+		tree.Insert(reverse(zone), cust)
 	}
 
 	c.Lock()

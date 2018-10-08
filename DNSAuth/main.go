@@ -211,13 +211,18 @@ func handleQuery(time time.Time, pop, line string) {
 
 	// Resolving destination address to client
 	qname := fields[QNAME][:len(fields[QNAME])-1]
-	zone, name := customerDB.Resolve(qname)
 
 	if ipv := net.ParseIP(fields[CLIENT_IP]); ipv != nil {
 		if ipv.To4() == nil {
 			version = "6"
 		}
 	}
+
+	nsIP := net.ParseIP(fields[NS_IP])
+	if nsIP == nil {
+		log.Fatalln("Unable to parse NS IP", fields[NS_IP])
+	}
+	zone, name := customerDB.Resolve(qname, nsIP)
 
 	rcode, err := strconv.Atoi(fields[RCODE])
 	if err != nil {
