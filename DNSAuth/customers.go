@@ -45,7 +45,7 @@ func (c *CustomerDB) Resolve(qname string, ip net.IP) (string, string) {
 	c.Unlock()
 	if found {
 		cust := value.(customer)
-		if bytes.Compare(ip, cust.IPStart) >= 0 && bytes.Compare(ip, cust.IPEnd) <= 0 {
+		if bytes.Compare(ip.To16(), cust.IPStart) >= 0 && bytes.Compare(ip.To16(), cust.IPEnd) <= 0 {
 			name = cust.Name
 		}
 		name = cust.Name
