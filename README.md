@@ -14,6 +14,10 @@ This repo contains 3 different main directories:
 
 ## Logs
 
+### Generating logs
+
+To generate logs, please see the [DNS pcap distiller](https://github.com/Packet-Clearing-House/DNS-pcap-distiller/) project.
+
 ### File Format
 
 This is a sample log from a DNS server that DNSAuth reads:
