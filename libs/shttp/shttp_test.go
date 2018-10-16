@@ -1,9 +1,9 @@
 package shttp
 
 import (
-	"testing"
-	"net/http"
 	"io/ioutil"
+	"net/http"
+	"testing"
 )
 
 func youpi() http.HandlerFunc {

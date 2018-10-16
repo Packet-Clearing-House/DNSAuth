@@ -1,14 +1,15 @@
 package main
 
 import (
-	"time"
-	"log"
-	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
-	"strings"
 	"bytes"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 )
 
 var INFLUX_URL = "http://127.0.0.1:8086/write?db=authdns"
@@ -26,7 +27,7 @@ func push(registry *metrics.Registry) {
 	for i, value := range splits {
 		cpt += 1
 		buffer.WriteString(value + "\n")
-		if i % 5000 == 0  && i != 0 {
+		if i%5000 == 0 && i != 0 {
 			resp, err := http.Post(INFLUX_URL, "application/octet-stream", buffer)
 			if err != nil {
 				log.Println(err)
@@ -48,5 +49,5 @@ func push(registry *metrics.Registry) {
 		resp.Body.Close()
 		log.Println("[Influx] Inserted " + strconv.Itoa(cpt) + " points in " + proctime.String())
 	}
-	
+
 }

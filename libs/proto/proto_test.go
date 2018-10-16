@@ -1,16 +1,16 @@
 package proto_test
 
 import (
-	"testing"
-	"net"
-	"log"
-	"github.com/golang/protobuf/proto"
 	"encoding/binary"
+	"log"
+	"net"
+	"testing"
 	"time"
-	. "github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/proto"
-	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/dnsdist"
-)
 
+	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/dnsdist"
+	. "github.com/Packet-Clearing-House/DNSAuth/DNSAuth/libs/proto"
+	"github.com/golang/protobuf/proto"
+)
 
 var from = "172.10.0.3"
 var msgtype = dnsdist.PBDNSMessage_DNSResponseType
@@ -22,15 +22,13 @@ var msg = dnsdist.PBDNSMessage{
 	Type: &msgtype,
 	From: net.ParseIP(from),
 	Question: &dnsdist.PBDNSMessage_DNSQuestion{
-		QName: &qname,
-		QType: &qtype,
+		QName:  &qname,
+		QType:  &qtype,
 		QClass: &qclass,
 	},
 }
 
-
 func TestProtoDialer(t *testing.T) {
-
 
 	log.Println("asdasds")
 	log.Println("here")
@@ -74,7 +72,7 @@ func TestProtoDialer(t *testing.T) {
 		log.Println("OWJ")
 	}()
 
-	time.Sleep(time.Second *2)
+	time.Sleep(time.Second * 2)
 	t.Log("here")
 	log.Println("asdasds")
 
@@ -89,14 +87,13 @@ func TestProtoDialer(t *testing.T) {
 		}
 	})
 
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	log.Println("END?")
 
-	received <-true
+	received <- true
 	d.Close()
 
 }
@@ -104,14 +101,13 @@ func TestProtoDialer(t *testing.T) {
 func TestProtoListener(t *testing.T) {
 
 	l := Listener{
-		Tag: "",
+		Tag:  "",
 		Addr: "0.0.0.0:8080",
-		ACL: []string{"127.0.0.1", "::1"},
+		ACL:  []string{"127.0.0.1", "::1"},
 	}
 
 	//ChanConn1 := make(chan bool)
 	log.Println("aasd")
-
 
 	var cpt = 0
 
@@ -127,7 +123,6 @@ func TestProtoListener(t *testing.T) {
 		buf, _ := proto.Marshal(&msg)
 		conn.WriteMsg(buf)
 		conn.Close()
-
 
 	})
 
@@ -145,7 +140,6 @@ func TestProtoListener(t *testing.T) {
 		log.Println(pc.LocalAddr())
 		log.Println(pc.RemoteAddr())
 
-
 		buf, _ := proto.Marshal(&msg)
 		pc.WriteMsg(buf)
 		msg, err := pc.ReadMsg()
@@ -159,12 +153,9 @@ func TestProtoListener(t *testing.T) {
 	l.Stop()
 	l.Serve(func(conn *ProtoConn) {})
 
-
 	//time.Sleep(time.Second * 5)
 	if cpt != 3 {
 		t.Fatal("Excecting 3 incoming connections, got only ", cpt)
 	}
-
-
 
 }

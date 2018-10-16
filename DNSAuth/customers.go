@@ -3,9 +3,10 @@ package main
 import (
 	"database/sql"
 	"sync"
-	_ "github.com/go-sql-driver/mysql"
+
 	radix "github.com/armon/go-radix"
-	_"github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 var DB_URL = "root:pass@(127.0.0.1)/customers"
@@ -22,13 +23,13 @@ func reverse(s string) string {
 type CustomerDB struct {
 	*sync.Mutex
 	dburl string
-	tree *radix.Tree
+	tree  *radix.Tree
 }
 
-// Resolve the customer name from DNS qname 
+// Resolve the customer name from DNS qname
 // Returns Unknown if not found
 func (c *CustomerDB) Resolve(qname string) (string, string) {
-	
+
 	name := "Unknown"
 	zone := "Unknown"
 	c.Lock()
@@ -41,7 +42,7 @@ func (c *CustomerDB) Resolve(qname string) (string, string) {
 }
 
 func (c *CustomerDB) Refresh() error {
-	
+
 	tree := radix.New()
 	mysql, err := sql.Open("mysql", DB_URL)
 	if err != nil {
@@ -63,7 +64,6 @@ func (c *CustomerDB) Refresh() error {
 		tree.Insert(reverse(zone), name)
 	}
 
-
 	c.Lock()
 	c.tree = tree
 	c.Unlock()
@@ -71,7 +71,7 @@ func (c *CustomerDB) Refresh() error {
 }
 
 // Init the customer DB. Connects to mysql to fetch all data and build a radix tree
-func NewCustomerDB(path string) (*CustomerDB) {
+func NewCustomerDB(path string) *CustomerDB {
 
 	return &CustomerDB{
 		new(sync.Mutex),

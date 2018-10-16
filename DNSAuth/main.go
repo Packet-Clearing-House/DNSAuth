@@ -1,20 +1,21 @@
 package main
 
 import (
-	"log"
-	"time"
-	"flag"
-	"os"
-	"net"
-	"strings"
-	"path/filepath"
-	"compress/gzip"
-	"bytes"
 	"bufio"
-	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
+	"bytes"
+	"compress/gzip"
+	"flag"
+	"fmt"
+	"log"
+	"net"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
+
 	"github.com/Packet-Clearing-House/DNSAuth/libs/dnsdist"
-	"github.com/Packet-Clearing-House/DNSAuth/DNSAuth/bgp"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
 )
 
 const (
@@ -33,34 +34,29 @@ const LAYOUT = "2006-01-02.15-04"
 
 var confpath = flag.String("c", "./dnsauth.toml", "Path for the config path (default is ./dnsauth.toml")
 
-
-var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "zone",  "protocol", "version", "prefix", "origin_as"}, 500)
+var dnsqueries = metrics.NewTTLTaggedMetrics("dnsauth_queries", []string{"direction", "pop", "qtype", "rcode", "customer", "zone", "protocol", "version", "prefix", "origin_as"}, 500)
 var customerDB *CustomerDB
 
-var BGP_LOOKUPS = false
-
-
 func main() {
-	
+
 	flag.Parse()
 
-	log.Println("Loading config file...")
+	log.Printf("Loading config file %s...\n", *confpath)
 	config, err := LoadConfig(*confpath)
 	if err != nil {
 		log.Fatalln("FAILED: ", err)
 	}
 	log.Println("OK!")
-	
+
 	DB_URL = config.CustomerDB
 	INFLUX_URL = config.InfluxDB
 
-	
 	// Starting the customerDB fetching process
 	log.Println("Initializing customer DB (will be refresh every " + strconv.Itoa(config.CustomerRefresh) + " hours)...")
 	customerDB = NewCustomerDB(DB_URL)
-	go func () {
+	go func() {
 		// Refresh function
-		refresh := func () {
+		refresh := func() {
 			log.Println("[CustomerDB] Refreshing list from mysql...")
 			if err := customerDB.Refresh(); err != nil {
 				log.Println("[CustomerDB] ERROR: Could not refresh customer list (", err, ")!")
@@ -73,20 +69,6 @@ func main() {
 		}
 	}()
 
-
-	// Checking for BGP conf and initaliazing BGP connection if needed
-	if config.BGP != nil {
-		BGP_LOOKUPS = true
-		log.Println("Starting BGP Resolver...")
-		err = bgp.Start(*config.BGP)
-		if err != nil {
-			log.Fatalln("FAILED: ", err)
-		}
-		log.Println("OK!")
-	} else {
-		log.Println("BGP lookups will be ignored, no BGP config provided.")
-	}
-
 	// Running the metric pushing process
 	metrics.DefaultRegistry.Register(dnsqueries)
 	go func() {
@@ -96,25 +78,23 @@ func main() {
 		}
 	}()
 
-
-
 	limiter := make(chan bool, 20)
 	files := make(map[string]interface{})
 	newFiles := make(map[string]interface{})
 
-	visit := func (path string, f os.FileInfo, err error) error {
+	visit := func(path string, f os.FileInfo, err error) error {
 		if strings.HasSuffix(path, ".dmp.gz") {
 
 			if _, found := files[path]; !found {
-				go aggreagate(path, limiter)
-				limiter <-true
+				go aggregate(path, limiter, config)
+				limiter <- true
 			}
 			newFiles[path] = true
 		}
 		return nil
 	}
 
-	err = filepath.Walk(config.WatchDir, func (path string, f os.FileInfo, err error) error {
+	err = filepath.Walk(config.WatchDir, func(path string, f os.FileInfo, err error) error {
 		if strings.HasSuffix(path, ".dmp.gz") {
 			files[path] = true
 		}
@@ -135,13 +115,13 @@ func main() {
 	}
 }
 
-func aggreagate(filepath string, limiter chan bool) {
+func aggregate(filePath string, limiter chan bool, config *Config) {
 
 	starttime := time.Now()
 
-	defer func() {<-limiter}()
+	defer func() { <-limiter }()
 
-	fileHandle, err := os.Open(filepath)
+	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println(err)
 		return
@@ -150,21 +130,21 @@ func aggreagate(filepath string, limiter chan bool) {
 
 	reader, err := gzip.NewReader(fileHandle)
 	if err != nil {
-		log.Println(filepath, ": ", err)
+		log.Println(filePath, ": ", err)
 		return
 	}
 	defer reader.Close()
 
-	index := strings.LastIndex(filepath,"mon-") + len("mon-")
-	mon := filepath[index:index+2]
-	pop := filepath[index+3:index+6]
+	index := strings.LastIndex(filePath, "mon-") + len("mon-")
+	mon := filePath[index : index+2]
+	pop := filePath[index+3 : index+6]
 
-	index = strings.LastIndex(filepath,"net_") + len("net_")
-	timestamp := filepath[index:index+16]
+	index = strings.LastIndex(filePath, "net_") + len("net_")
+	timestamp := filePath[index : index+16]
 
 	date, err := time.Parse(LAYOUT, timestamp)
 	if err != nil {
-		log.Println(filepath, ": ", err)
+		log.Println(filePath, ": ", err)
 		return
 	}
 
@@ -181,7 +161,7 @@ func aggreagate(filepath string, limiter chan bool) {
 
 		fields := strings.Fields(line)
 		if len(fields) != 9 {
-			log.Println("Issue unformatting line:", line, " for dump ", filepath)
+			log.Println("Issue unformatting line:", line, " for dump ", filePath)
 			continue
 		}
 		buffer.WriteString(line)
@@ -200,7 +180,6 @@ func aggreagate(filepath string, limiter chan bool) {
 	}
 	initialdate := date
 
-
 	for {
 		date = date.Add(time.Duration(interval) * time.Microsecond)
 
@@ -212,12 +191,15 @@ func aggreagate(filepath string, limiter chan bool) {
 		handleQuery(date.Truncate(time.Minute), pop, line)
 
 	}
+	err = cleanupFile(filePath, config)
+	if err != nil {
+		log.Printf("Failed to clean up %s. Reason: %s", filePath, err)
+	}
 	proctime := time.Since(starttime)
 	log.Printf("Processed dump [mon-%s-%s](%s - %s): %d lines in (%s) seconds!\n",
 		mon, pop, initialdate, date, cpt, proctime)
 
 }
-
 
 func handleQuery(time time.Time, pop, line string) {
 
@@ -230,7 +212,6 @@ func handleQuery(time time.Time, pop, line string) {
 	// Resolving destination address to client
 	qname := fields[QNAME][:len(fields[QNAME])-1]
 	zone, name := customerDB.Resolve(qname)
-
 
 	if ipv := net.ParseIP(fields[CLIENT_IP]); ipv != nil {
 		if ipv.To4() == nil {
@@ -259,4 +240,28 @@ func handleQuery(time time.Time, pop, line string) {
 	}
 
 	dnsqueries.GetAt(time, fields[DIRECTION], pop, qtypestr, rcodestr, name, zone, protocol, version, originAs, prefix).Inc()
+}
+
+func cleanupFile(filePath string, config *Config) error {
+	var err error
+	switch config.CleanupAction {
+	case "move":
+		err = cleanupFileMove(filePath, config.CleanupDir)
+	case "delete":
+		err = cleanupFileDelete(filePath)
+	case "none":
+	default:
+		err = fmt.Errorf("Invalid config setting for cleanup action: %s", config.CleanupAction)
+	}
+	return err
+}
+
+func cleanupFileMove(filePath string, destDir string) error {
+	log.Printf("Moving file %s to %s\n", filePath, destDir)
+	return os.Rename(filePath, destDir+"/"+filepath.Base(filePath))
+}
+
+func cleanupFileDelete(filePath string) error {
+	log.Printf("Removing file %s\n", filePath)
+	return os.Remove(filePath)
 }

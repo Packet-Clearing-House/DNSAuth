@@ -1,9 +1,9 @@
 package metrics
 
 import (
-	"testing"
 	"fmt"
 	"net/http"
+	"testing"
 )
 
 func TestMetrics(t *testing.T) {
@@ -14,7 +14,6 @@ func TestMetrics(t *testing.T) {
 	fmt.Println(sm.Encode(pe))
 	sm.Set(80)
 	fmt.Println(sm.Encode(pe))
-
 
 	tm := NewTaggedMetrics("test2", []string{"tag", "tag2"})
 	tm.Get("test", "test2").Set(80)

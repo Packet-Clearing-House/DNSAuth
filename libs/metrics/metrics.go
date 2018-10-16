@@ -1,12 +1,11 @@
 package metrics
 
 import (
-	"github.com/orcaman/concurrent-map"
 	"sync/atomic"
 	"time"
+
+	"github.com/orcaman/concurrent-map"
 )
-
-
 
 type Labels map[*string]string
 
@@ -23,13 +22,10 @@ type Metrics interface {
 	Value() uint64
 }
 
-
 type Vector interface {
 	Name()
 	Collect()
 }
-
-
 
 type Metric interface {
 	Name() string
@@ -45,14 +41,14 @@ type Collector interface {
 }
 
 type SimpleMetric struct {
-	name *string
-	time *time.Time
+	name  *string
+	time  *time.Time
 	value uint64
 }
 
 type FuncMetric struct {
 	name string
-	fn func() uint64
+	fn   func() uint64
 }
 
 func NewSimpleMetric(name string) *SimpleMetric {
@@ -70,7 +66,7 @@ func NewFuncMetric(name string, fn func() uint64) *FuncMetric {
 	}
 }
 
-func (fm *FuncMetric) Name() string{
+func (fm *FuncMetric) Name() string {
 	return fm.name
 }
 
@@ -91,7 +87,7 @@ func (sm *SimpleMetric) Inc() {
 }
 
 func (sm *SimpleMetric) Dec() {
-	atomic.StoreUint64(&sm.value, atomic.LoadUint64(&sm.value) - 1)
+	atomic.StoreUint64(&sm.value, atomic.LoadUint64(&sm.value)-1)
 }
 
 func (sm *SimpleMetric) Value() uint64 {
@@ -108,12 +104,11 @@ type MetricEncoder interface {
 	EncodeFuncMetric(tm *FuncMetric) string
 }
 
-
 type TaggedMetrics struct {
-	name string
-	Tags []string
+	name    string
+	Tags    []string
 	Updates cmap.ConcurrentMap
-	Values cmap.ConcurrentMap
+	Values  cmap.ConcurrentMap
 }
 
 func (tm *TaggedMetrics) GetAt(date time.Time, tags ...string) *SimpleMetric {
@@ -154,11 +149,9 @@ func (tm *TaggedMetrics) Get(tags ...string) *SimpleMetric {
 	return sm
 }
 
-
 func (tm *TaggedMetrics) Name() string {
 	return tm.name
 }
-
 
 func (tm *TaggedMetrics) Encode(encoder MetricEncoder) string {
 	return encoder.EncodeTaggedMetrics(tm)
@@ -177,7 +170,7 @@ func (tm *TaggedMetrics) handleQuiescentMetrics(ttl int64) {
 	for {
 		for tuple := range tm.Updates.IterBuffered() {
 			value := tuple.Val.(int64)
-			if value + ttl <= time.Now().Unix() {
+			if value+ttl <= time.Now().Unix() {
 				tm.Updates.Remove(tuple.Key)
 				tm.Values.Remove(tuple.Key)
 			}
@@ -188,7 +181,7 @@ func (tm *TaggedMetrics) handleQuiescentMetrics(ttl int64) {
 
 func NewTaggedMetrics(name string, tags []string) *TaggedMetrics {
 
-	tm := &TaggedMetrics {
+	tm := &TaggedMetrics{
 		name,
 		tags,
 		cmap.New(),
@@ -199,7 +192,7 @@ func NewTaggedMetrics(name string, tags []string) *TaggedMetrics {
 
 func NewTTLTaggedMetrics(name string, tags []string, ttl int64) *TaggedMetrics {
 
-	tm := &TaggedMetrics {
+	tm := &TaggedMetrics{
 		name,
 		tags,
 		cmap.New(),
