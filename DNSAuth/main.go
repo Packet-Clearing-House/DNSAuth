@@ -222,7 +222,10 @@ func handleQuery(time time.Time, pop, line string) {
 	if nsIP == nil {
 		log.Fatalln("Unable to parse NS IP", fields[NS_IP])
 	}
-	zone, name := customerDB.Resolve(qname, nsIP)
+	zone, name, found := customerDB.Resolve(qname, nsIP)
+	if found > 1 {
+		log.Println("WARNING: found", found, "matches for query", qname, string(nsIP))
+	}
 
 	rcode, err := strconv.Atoi(fields[RCODE])
 	if err != nil {
