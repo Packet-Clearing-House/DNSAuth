@@ -28,6 +28,14 @@ func reverse(s string) string {
 	return string(r)
 }
 
+// ipBytes returns the byte array of a net.IP, supporting both IPv4 and IPv6
+func ipBytes(ip net.IP) []byte {
+	if ipBytes4 := ip.To4(); ipBytes4 != nil {
+		return ipBytes4
+	}
+	return ip
+}
+
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -83,7 +91,7 @@ func (c *CustomerDB) Resolve(qname string, ip net.IP) (string, string, int) {
 	// Match by IP range
 	c.Lock()
 	var ipInt big.Int
-	ipInt.SetBytes(ip.To16())
+	ipInt.SetBytes(ipBytes(ip))
 	queryInterval := iprange.NewSingleDimensionInterval(ipInt, ipInt, 0, nil)
 	intervals := (*c.atree).Query(queryInterval)
 	c.Unlock()
@@ -96,7 +104,7 @@ func (c *CustomerDB) Resolve(qname string, ip net.IP) (string, string, int) {
 			name = customersFound[0].Name
 		}
 	}
-	return reverse(zone), name, found
+	return zone, name, found
 }
 
 // Refresh selects all rows from customer database and updates internal
@@ -108,7 +116,14 @@ func (c *CustomerDB) Refresh() error {
 		return err
 	}
 
-	rows, err := mysql.Query("SELECT id, name, ip_start, ip_end, zone FROM zones;")
+	rows, err := mysql.Query(`
+		SELECT
+			id,
+			name,
+			TRIM(LEADING CHAR('\0') FROM ip_start) AS ip_start,
+			TRIM(LEADING CHAR('\0') FROM ip_end) AS ip_end,
+			zone
+		FROM zones;`)
 	if err != nil {
 		return err
 	}
