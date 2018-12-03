@@ -60,13 +60,16 @@ SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz
 
 This file is included in the repository for example purposes.
 
-### Fie Format
+### File Format
 
 DNSAuth needs all log files to be gzipped and end in ``.gz``.
 
 ## Resolving customer
 
-Given the qname of a DNS query, the resolution happens through zone names that are retreive from a mysql database. Each customer will be assocated with one or more zone names which then will be used in a radix tree in order to get the longest prefix match from the qname.
+Customers are defined and stored in the MySQL database. They contain IP range start/end and zone columns. When DNSAuth starts, they are loaded in memory in an interval tree, and used for looking up queries. Given a host IP and a qname of a DNS query:
+
+- first host IP is matched against the customer ranges
+- result is further filtered by longest common prefix match of qname on the zone
 
 If no customer is found, then "Unknown" is written to the database. See the "Installation" section below for further details about configuring customer rows.
 
