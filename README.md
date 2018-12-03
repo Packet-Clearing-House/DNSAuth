@@ -18,7 +18,7 @@ This repo contains 3 different main directories:
 
 To generate logs, please see the [DNS pcap distiller](https://github.com/Packet-Clearing-House/DNS-pcap-distiller/) project.
 
-### File Format
+### Log Lines
 
 This is a sample log from a DNS server that DNSAuth reads:
 
@@ -64,7 +64,7 @@ SZC_mon-01.lga.example.com_2018-02-25.05-32.dmp.gz
 
 This file is included in the repository for example purposes.
 
-### Fie Format
+### File Format
 
 DNSAuth needs all log files to be gzipped and end in ``.gz``.
 
