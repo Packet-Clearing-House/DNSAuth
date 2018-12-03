@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Packet-Clearing-House/DNSAuth/libs/metrics"
-	"github.com/asergeyev/nradix"
 )
 
 var res = `dnsaut_queries{direction="Q",pop=".wo",qtype="DNSKEY",rcode="none"} 1 1508260020000
@@ -41,11 +40,12 @@ func TestCounters(t *testing.T) {
 	limiter := make(chan bool)
 	close(limiter)
 
-	tree = nradix.NewTree(0)
+	//tree := nradix.NewTree(0)
 
 	metrics.DefaultRegistry.Register(dnsqueries)
+	cfg, _ := LoadConfig("")
 	// todo - this test file doesn't exist any more, need to create a dummy one with this name
-	aggreagate("./tests/mon-01.xyz.foonet.net_2017-10-17.17-07.dmp.gz", limiter)
+	aggregate("./tests/mon-01.xyz.foonet.net_2017-10-17.17-07.dmp.gz", limiter, cfg)
 
 	str := metrics.DefaultRegistry.Encode(&metrics.InfluxEncodeur{})
 

@@ -36,8 +36,8 @@ func ipBytes(ip net.IP) []byte {
 	return ip
 }
 
-func max(a, b int) int {
-	if a > b {
+func min(a, b int) int {
+	if a < b {
 		return a
 	}
 	return b
@@ -49,9 +49,9 @@ func longestCommonPrefix(strA, strB string) int {
 	}
 	runeA := []rune(strA)
 	runeB := []rune(strB)
-	maxLength := max(len(runeA), len(runeB))
+	minLength := min(len(runeA), len(runeB))
 	var i int
-	for i < maxLength && runeA[i] == runeB[i] {
+	for i < minLength && runeA[i] == runeB[i] {
 		i++
 	}
 	return i
@@ -64,7 +64,7 @@ func matchQueryPrefix(qnameRev string, intervals atree.Intervals) []*customer {
 		interval := intervals[i]
 		ipRange := interval.(*iprange.IPInterval)
 		cust := ipRange.Value.(customer)
-		match := longestCommonPrefix(qnameRev, cust.Zone)
+		match := longestCommonPrefix(qnameRev, reverse(cust.Zone))
 		if match > longestMatch {
 			customers = []*customer{&cust}
 			longestMatch = match
