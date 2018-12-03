@@ -96,4 +96,9 @@ func TestMatches(t *testing.T) {
 	assert.Equal(t, "foobar6.com", foundZone)
 	assert.Equal(t, "foobar6", foundName)
 	assert.Equal(t, 1, foundNum)
+	// Unknown
+	foundZone, foundName, foundNum = cdb.Resolve("foobarbaz.com", net.ParseIP("1.1.1.1"))
+	assert.Equal(t, "Unknown", foundZone)
+	assert.Equal(t, "Unknown", foundName)
+	assert.Equal(t, 0, foundNum)
 }
