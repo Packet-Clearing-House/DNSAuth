@@ -209,10 +209,10 @@ visual output:
 
 In this example, customer "foo" has host IP range from `100.100.100.0` to
 `100.100.100.255` (`100.100.100.0/24`). The range is inclusive - so to designate
-a single IP address, `ip_start` and `ip_end` would be the same, as is the case
-with customer "bar". The host IP range supports both IPv4 and IPv6 addresses.
+a single IP address, `ip_start` and `ip_end` would have the same value, as is the
+case with customer "bar". The host IP range supports both IPv4 and IPv6 addresses.
 
-To add more customers, simply `INSERT` more rows. Query is similar whether
+To add more customers, simply `INSERT` more rows. Statements are similar whether
 adding IPv4 or IPv6 addresses. For example:
 
 ```sql
@@ -222,13 +222,13 @@ VALUES (
   'new_customer',
   LPAD(INET6_ATON('240.1.44.0'),16,'\0'),
   LPAD(INET6_ATON('240.1.45.255'),16,'\0'),
-  'auction.com'
+  'some-domain.test'
 ), (
   4,
   'another_customer',
   LPAD(INET6_ATON('fdf8:f53b:82e4::52'),16,'\0'),
   LPAD(INET6_ATON('fdf8:f53b:82e4::53'),16,'\0'),
-  'auction.com'
+  'ipv6-domain.test'
 );
 ```
 
