@@ -1,0 +1,18 @@
+# URL for the MySQL instance to retreive customers
+customer-db = ""
+
+# Refreshing interval (hours) of the customer database.
+customer-refresh = 10
+
+# The URL of the influx DB instance.
+influx-db = ""
+
+# The directory DNSAuth should watch for new log files coming in.
+watch-dir = "./"
+
+# Action to take after processing a file; one of none, move, or delete.
+cleanup-action = "none"
+
+# Path to move processed files when cleanup-action = "move".
+# Must not be a sub-directory of watch-dir; no trailing slash.
+cleanup-dir = "/tmp"

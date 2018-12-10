@@ -28,8 +28,9 @@ DROP TABLE IF EXISTS `zones`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `zones` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `group_name` varchar(40) NOT NULL DEFAULT '',
-  `host` varchar(80) NOT NULL,
+  `name` varchar(40) NOT NULL DEFAULT '',
+  `ip_start` binary(16),
+  `ip_end` binary(16),
   `zone` varchar(1024) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=81928 DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
@@ -41,7 +42,9 @@ CREATE TABLE `zones` (
 
 LOCK TABLES `zones` WRITE;
 /*!40000 ALTER TABLE `zones` DISABLE KEYS */;
-INSERT INTO zones VALUES (1,'foo','af-inbound.auction.com','auction.com'),(2,'bar','aasd-inbound.test.com','test.com');
+INSERT INTO zones VALUES
+(1,'foo',LPAD(INET6_ATON('100.100.100.0'),16,'\0'),LPAD(INET6_ATON('100.100.100.255'),16,'\0'),'auction.com'),
+(2,'bar',LPAD(INET6_ATON('fdfe::5a55:caff:fefa:9089'),16,'\0'),LPAD(INET6_ATON('fdfe::5a55:caff:fefa:9089'),16,'\0'),'test.com');
 /*!40000 ALTER TABLE `zones` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

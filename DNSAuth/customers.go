@@ -2,14 +2,22 @@ package main
 
 import (
 	"database/sql"
+	"math/big"
+	"net"
 	"sync"
 
-	radix "github.com/armon/go-radix"
+	"github.com/Packet-Clearing-House/DNSAuth/libs/iprange"
+	atree "github.com/Packet-Clearing-House/go-datastructures/augmentedtree"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
 
 var DB_URL = "root:pass@(127.0.0.1)/customers"
+
+type customer struct {
+	Name string
+	Zone string
+}
 
 // Function that reverse a word (test.com -> moc.tset)
 func reverse(s string) string {
@@ -20,62 +28,139 @@ func reverse(s string) string {
 	return string(r)
 }
 
+// ipBytes returns the byte array of a net.IP, supporting both IPv4 and IPv6
+func ipBytes(ip net.IP) []byte {
+	if ipBytes4 := ip.To4(); ipBytes4 != nil {
+		return ipBytes4
+	}
+	return ip
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func longestCommonPrefix(strA, strB string) int {
+	if strA == "" || strB == "" {
+		return 0
+	}
+	runeA := []rune(strA)
+	runeB := []rune(strB)
+	minLength := min(len(runeA), len(runeB))
+	var i int
+	for i < minLength && runeA[i] == runeB[i] {
+		i++
+	}
+	return i
+}
+
+func matchQueryPrefix(qnameRev string, intervals atree.Intervals) []*customer {
+	var customers []*customer
+	var longestMatch int
+	for i := 0; i < len(intervals); i++ {
+		interval := intervals[i]
+		ipRange := interval.(*iprange.IPInterval)
+		cust := ipRange.Value.(customer)
+		match := longestCommonPrefix(qnameRev, reverse(cust.Zone))
+		if match > longestMatch {
+			customers = []*customer{&cust}
+			longestMatch = match
+		} else if match == longestMatch {
+			customers = append(customers, &cust)
+		}
+	}
+	return customers
+}
+
 type CustomerDB struct {
 	*sync.Mutex
 	dburl string
-	tree  *radix.Tree
+	atree *atree.Tree
 }
 
 // Resolve the customer name from DNS qname
 // Returns Unknown if not found
-func (c *CustomerDB) Resolve(qname string) (string, string) {
+func (c *CustomerDB) Resolve(qname string, ip net.IP) (string, string, int) {
 
 	name := "Unknown"
 	zone := "Unknown"
+	var found int
+	// Match by IP range
 	c.Lock()
-	zone, value, found := c.tree.LongestPrefix(reverse(qname))
+	var ipInt big.Int
+	ipInt.SetBytes(ipBytes(ip))
+	queryInterval := iprange.NewSingleDimensionInterval(ipInt, ipInt, 0, nil)
+	intervals := (*c.atree).Query(queryInterval)
 	c.Unlock()
-	if found {
-		name = value.(string)
+	// Now use IP range matches to find longest prefix match(es)
+	if len(intervals) > 0 {
+		customersFound := matchQueryPrefix(reverse(qname), intervals)
+		found = len(customersFound)
+		if found >= 1 {
+			zone = customersFound[0].Zone
+			name = customersFound[0].Name
+		}
 	}
-	return reverse(zone), name
+	return zone, name, found
 }
 
+// Refresh selects all rows from customer database and updates internal
+// interval tree.
 func (c *CustomerDB) Refresh() error {
-
-	tree := radix.New()
+	atree := atree.New(1)
 	mysql, err := sql.Open("mysql", DB_URL)
 	if err != nil {
 		return err
 	}
 
-	rows, err := mysql.Query("SELECT group_name, zone FROM zones;")
+	rows, err := mysql.Query(`
+		SELECT
+			id,
+			name,
+			TRIM(LEADING CHAR('\0') FROM ip_start) AS ip_start,
+			TRIM(LEADING CHAR('\0') FROM ip_end) AS ip_end,
+			zone
+		FROM zones;`)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
+		var id uint64
 		var name, zone string
-		err := rows.Scan(&name, &zone)
+		var ipStart, ipEnd []byte
+		err := rows.Scan(&id, &name, &ipStart, &ipEnd, &zone)
 		if err != nil {
 			return err
 		}
-		tree.Insert(reverse(zone), name)
+		cust := customer{
+			Name: name,
+			Zone: zone,
+		}
+		var ipStartInt, ipEndInt big.Int
+		ipStartInt.SetBytes(ipStart)
+		ipEndInt.SetBytes(ipEnd)
+		ipRange := iprange.NewSingleDimensionInterval(ipStartInt, ipEndInt, id, cust)
+		atree.Add(ipRange)
 	}
 
 	c.Lock()
-	c.tree = tree
+	c.atree = &atree
 	c.Unlock()
 	return nil
 }
 
-// Init the customer DB. Connects to mysql to fetch all data and build a radix tree
+// NewCustomerDB initializes the customer DB. Connects to mysql to fetch all
+// data and build a radix tree.
 func NewCustomerDB(path string) *CustomerDB {
-
+	atree := atree.New(1)
 	return &CustomerDB{
 		new(sync.Mutex),
 		path,
-		radix.New(),
+		&atree,
 	}
 }

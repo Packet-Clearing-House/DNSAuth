@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  digest = "1:c47f4964978e211c6e566596ec6246c329912ea92e9bb99c00798bb4564c5b09"
-  name = "github.com/armon/go-radix"
-  packages = ["."]
+  branch = "master"
+  digest = "1:286df00c857d29d37c9a658208d5f2727249cd5ce7aecb88c7c03982ac85d836"
+  name = "github.com/Packet-Clearing-House/go-datastructures"
+  packages = ["augmentedtree"]
   pruneopts = "UT"
-  revision = "1a2de0c21c94309923825da3df33a4381872c795"
-  version = "v1.0.0"
+  revision = "82f9ba053997d4f12e6e27ddb93cc292e9be7bf7"
 
 [[projects]]
   branch = "master"
@@ -110,7 +110,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/armon/go-radix",
+    "github.com/Packet-Clearing-House/go-datastructures/augmentedtree",
     "github.com/asergeyev/nradix",
     "github.com/elgs/gosqljson",
     "github.com/go-sql-driver/mysql",
