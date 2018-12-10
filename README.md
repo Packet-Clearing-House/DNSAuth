@@ -198,7 +198,13 @@ This will generate 2 dummy customers "foo", "bar". Here's how to query them for
 visual output:
 
 ```sql
-[customers]> SELECT id, name, INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_start)) AS ip_start, INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_end)) AS ip_end, zone FROM zones;
+[customers]> SELECT
+  id,
+  name,
+  INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_start)) AS ip_start,
+  INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_end)) AS ip_end,
+  zone
+FROM zones;
 +----+------+---------------------------+---------------------------+-------------+
 | id | name | ip_start                  | ip_end                    | zone        |
 +----+------+---------------------------+---------------------------+-------------+
@@ -207,7 +213,8 @@ visual output:
 +----+------+---------------------------+---------------------------+-------------+
 ```
 
-In this example, customer "foo" has host IP range from `100.100.100.0` to
+The host IP range is stored in binary format with `ip_start` and `ip_end`
+fields. In this example, customer "foo" has host IP range from `100.100.100.0` to
 `100.100.100.255` (`100.100.100.0/24`). The range is inclusive - so to designate
 a single IP address, `ip_start` and `ip_end` would have the same value, as is the
 case with customer "bar". The host IP range supports both IPv4 and IPv6 addresses.
