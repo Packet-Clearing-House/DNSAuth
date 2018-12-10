@@ -194,7 +194,43 @@ load our default database and test customers:
 mysql -u dnsauth -p -h localhost < $GOPATH/src/github.com/Packet-Clearing-House/DNSAuth/customers.sql
 ```
 
-This will generate 2 dummy customers "foo", "bar".
+This will generate 2 dummy customers "foo", "bar". Here's how to query them for
+visual output:
+
+```sql
+[customers]> SELECT id, name, INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_start)) AS ip_start, INET6_NTOA(TRIM(LEADING CHAR('\0') FROM ip_end)) AS ip_end, zone FROM zones;
++----+------+---------------------------+---------------------------+-------------+
+| id | name | ip_start                  | ip_end                    | zone        |
++----+------+---------------------------+---------------------------+-------------+
+|  1 | foo  | 100.100.100.0             | 100.100.100.255           | auction.com |
+|  2 | bar  | fdfe::5a55:caff:fefa:9089 | fdfe::5a55:caff:fefa:9089 | test.com    |
++----+------+---------------------------+---------------------------+-------------+
+```
+
+In this example, customer "foo" has host IP range from `100.100.100.0` to
+`100.100.100.255` (`100.100.100.0/24`). The range is inclusive - so to designate
+a single IP address, `ip_start` and `ip_end` would be the same, as is the case
+with customer "bar". The host IP range supports both IPv4 and IPv6 addresses.
+
+To add more customers, simply `INSERT` more rows. Query is similar whether
+adding IPv4 or IPv6 addresses. For example:
+
+```sql
+INSERT INTO zones (id, name, ip_start, ip_end, zone)
+VALUES (
+  3,
+  'new_customer',
+  LPAD(INET6_ATON('240.1.44.0'),16,'\0'),
+  LPAD(INET6_ATON('240.1.45.255'),16,'\0'),
+  'auction.com'
+), (
+  4,
+  'another_customer',
+  LPAD(INET6_ATON('fdf8:f53b:82e4::52'),16,'\0'),
+  LPAD(INET6_ATON('fdf8:f53b:82e4::53'),16,'\0'),
+  'auction.com'
+);
+```
 
 #### Run 
 
