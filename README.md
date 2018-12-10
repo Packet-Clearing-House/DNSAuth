@@ -271,6 +271,14 @@ If everything is working, then you should see this after you copy the file:
 2017/12/12 06:56:16 Processed dump [mon-01.lga](2017-10-17 17:07:00 +0000 UTC - 2017-10-17 17:10:00.215724 +0000 UTC): 833 lines in (2.876312ms) seconds!
 
 ```
+#### Running tests
+
+Existing unit tests (customer name resolution) can be run via:
+
+```
+cd DNSAuth
+go test
+```
 
 #### Building from a branch
 
