@@ -139,7 +139,7 @@ func aggregate(filePath string, limiter chan bool, config *Config) {
 	mon := filePath[index : index+2]
 	pop := filePath[index+3 : index+6]
 
-	index = strings.LastIndex(filePath, "net_") + len("net_")
+	index = strings.LastIndex(filePath, "_") + 1
 	timestamp := filePath[index : index+16]
 
 	date, err := time.Parse(LAYOUT, timestamp)
